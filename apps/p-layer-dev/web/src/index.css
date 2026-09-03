@@ -7388,3 +7388,29 @@ button.app-footer-item:active {
   font-weight: 700;
   letter-spacing: .06em;
 }
+
+/* 极简田字格 4 象限 */
+.wallace-overview-svg .wn-quad-big {
+  fill: #3d4a50;
+  font-size: 34px;
+  font-weight: 800;
+  letter-spacing: .02em;
+}
+
+.wallace-overview-svg .wn-quad-big-en {
+  fill: #5c6a72;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: .12em;
+}
+
+.wallace-overview-svg .wn-quad-sub {
+  fill: #7c888f;
+  font-size: 13px;
+}
+
+.wallace-overview-svg .wn-quad-sub-en {
+  fill: #9aa3a9;
+  font-size: 10.5px;
+  letter-spacing: .04em;
+}
