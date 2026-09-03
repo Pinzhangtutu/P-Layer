@@ -231,6 +231,7 @@ export function TrainingPanelV1({
         <p className="loop-exit-sub">{t('v1ExitSub')}</p>
         <div className="loop-exit-grid">
           <button type="button" className={`loop-exit-card${pdfPick ? ' is-active' : ''}`} onClick={() => setPdfPick((p) => !p)}>📄 {t('v1ExitPdf')}</button>
+          <button type="button" className="loop-exit-card" onClick={() => { onClose(); onNavigate('flow') }}>📋 {t('v1ExitFlow')}</button>
           <button type="button" className="loop-exit-card" onClick={() => { onClose(); onNavigate('literature') }}>📚 {t('v1ExitLit')}</button>
           <button type="button" className="loop-exit-card" onClick={openFeedback}>💬 {t('v1ExitFb')}</button>
           <button type="button" className="loop-exit-card" onClick={() => goto('recheck')}>🔍 {t('v1ExitRecheck')}</button>

@@ -5089,7 +5089,7 @@ button.app-footer-item:active {
 }
 .loop-exit-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
   gap: 8px;
 }
 .loop-exit-card {
@@ -6724,5 +6724,77 @@ button.app-footer-item:active {
 
   .board-kanban.is-actions .board-column-body {
     max-height: none;
+  }
+}
+
+/* ---------- 主页流程入口（§17.5：直达研究流程） ---------- */
+.homev2-flow-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  max-width: 1180px;
+  margin: 0 auto 24px;
+  padding: 14px 18px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: linear-gradient(120deg, rgba(245, 246, 224, 0.7), var(--card));
+  color: var(--ink);
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+  transition: transform 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease;
+}
+
+.homev2-flow-row:hover {
+  border-color: var(--blue);
+  box-shadow: 0 6px 18px rgba(36, 87, 230, 0.08);
+  transform: translateY(-1px);
+}
+
+.homev2-flow-row:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 2px;
+}
+
+.homev2-flow-ic {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: var(--soft);
+  font-size: 18px;
+  flex: 0 0 auto;
+}
+
+.homev2-flow-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  line-height: 1.4;
+}
+
+.homev2-flow-body b {
+  font-size: 14px;
+  color: var(--ink);
+}
+
+.homev2-flow-body small {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+@media (max-width: 640px) {
+  .homev2-flow-row {
+    padding: 12px 14px;
+  }
+
+  .homev2-flow-ic {
+    width: 30px;
+    height: 30px;
+    font-size: 16px;
   }
 }

@@ -259,6 +259,16 @@ export function HomeDashboard({
         </button>
       </section>
 
+      {/* ===== 流程入口：把头脑风暴 RQ 落到九步研究流程 ===== */}
+      <button type="button" className="homev2-flow-row" onClick={() => onGo('flow')}>
+        <span className="homev2-flow-ic" aria-hidden="true">📋</span>
+        <span className="homev2-flow-body">
+          <b>{t('homeFlow')}</b>
+          <small>{t('homeFlowDesc')}</small>
+        </span>
+        <span className="homev2-go">{lang === 'en' ? 'Open' : '进入'} →</span>
+      </button>
+
       {/* ===== 真实最近工作 ===== */}
       <section className="homev2-recent-head">
         <h2>{t('homeRecentTitle')}</h2>
