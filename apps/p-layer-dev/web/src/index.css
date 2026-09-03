@@ -7499,3 +7499,96 @@ button.pm-study-stage.is-done {
   justify-content: flex-end;
   margin-top: 8px;
 }
+
+/* ---- 科学环：现有 Idea 列表（§7.4 次级入口）---- */
+.science-existing-ideas {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: rgba(247, 248, 246, 0.55);
+}
+
+.science-existing-ideas-head b {
+  display: block;
+  color: var(--ink);
+  font-size: 13px;
+  margin-bottom: 2px;
+}
+
+.science-existing-ideas-head small {
+  color: var(--muted);
+  font-size: 11.5px;
+}
+
+.science-existing-ideas-list {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+button.science-enter-idea {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.7);
+  font: inherit;
+  color: var(--ink);
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+button.science-enter-idea:hover {
+  border-color: var(--blue);
+  background: #fff;
+}
+
+.science-enter-idea-id {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 10.5px;
+  color: var(--muted);
+  flex: 0 0 auto;
+  padding: 1px 6px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.6);
+}
+
+.science-enter-idea-body {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.science-enter-idea-body b {
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.science-enter-idea-body small {
+  color: var(--muted);
+  font-size: 10.5px;
+}
+
+.science-enter-idea-go {
+  color: var(--blue);
+  font-weight: 600;
+  font-size: 12px;
+  flex: 0 0 auto;
+}

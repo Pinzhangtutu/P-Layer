@@ -9,7 +9,8 @@ import {
 import { useI18n } from "../i18n";
 import { useProject } from "../lib/useProject";
 import { askAssistant } from "../lib/api";
-import { readIdeas } from "../lib/ideas";
+import { readIdeas, type Idea } from "../lib/ideas";
+import { normBrainstorm } from "../lib/brainstormV1";
 import { WallaceCycleOverview } from "./WallaceCycleOverview";
 
 export type NodeKey = "E" | "T" | "H" | "O";
@@ -296,6 +297,32 @@ export function ScienceCycle({
     setPiaAnswer("");
   }
 
+  const cycleWorkspace = useMemo(() => readWorkspace(active), [active])
+
+  function readWorkspace(project: { notes?: Record<string, unknown> } | null | undefined): NodeNotes {
+    const ws = project?.notes?.[CYCLE_WS_KEY] as { nodeNotes?: NodeNotes } | undefined
+    return ws?.nodeNotes ?? {}
+  }
+
+  /* 从已有 Idea 进入环节点工作卡（§7.4 次级入口）：
+     ① 推断目标节点：优先该 Idea 的 researchState.currentNode
+        （用户在头脑风暴训练中曾锁定到的环位置），否则回落到当前环的 activeNode；
+     ② 预填项目级 cycleWorkspace 中该节点已有草稿（跨 Idea 共享草稿区，
+        因为环工作台属于项目级而非 Idea 级，§7.4"环本身不改数据"）；
+     ③ 触发滚动到工作卡并聚焦 textarea。 */
+  const enterIdeaForNode = (idea: Idea) => {
+    const rs = normBrainstorm(idea.brainstorm)
+    const persistedNode = (rs.scienceCycle?.currentNode ?? null) as NodeKey | null
+    const target: NodeKey =
+      (persistedNode && NODES.find((n) => n.key === persistedNode)?.key) ||
+      CYCLE_ORDER[cycleIndex] ||
+      NODES[0].key
+    setFocusedKey(target)
+    setNodeDrafts((prev) => ({ ...prev, [target]: prev[target] ?? '' }))
+    setNodeDraft(cycleWorkspace[target] ?? '')
+    setScrollToWorkCard((v) => v + 1)
+  }
+
   const focused = NODES.find((n) => n.key === focusedKey) || null;
   const activeNode = NODES.find((n) => n.key === CYCLE_ORDER[cycleIndex]) ?? null;
 
@@ -504,10 +531,43 @@ export function ScienceCycle({
         </section>
       ) : null}
       {ideas.length ? (
-        <div className="science-existing-note">
-          {lang === "en"
-            ? `${ideas.length} saved Idea${ideas.length === 1 ? "" : "s"} in this project — brainstorm or manage them from the top nav.`
-            : `当前项目已有 ${ideas.length} 个 Idea — 用顶部「头脑风暴 / 研究库」继续。`}
+        <div className="science-existing-ideas">
+          <div className="science-existing-ideas-head">
+            <b>{lang === "en"
+              ? `Existing Ideas in this project (${ideas.length})`
+              : `本项目已有 ${ideas.length} 个 Idea —— 在科学环继续：`}</b>
+            <small>{lang === "en"
+              ? 'Click an Idea to open its current node workspace. New evidence or steps are saved to the project-level cycle workspace, not to the Idea.'
+              : '点 Idea 进入当前节点工作卡；新证据或步骤保存到项目级 cycleWorkspace，不写回 Idea 本身。'}</small>
+          </div>
+          <ul className="science-existing-ideas-list">
+            {ideas.map((idea) => {
+              const rs = normBrainstorm(idea.brainstorm)
+              const nodeKey: NodeKey = (rs.researchState?.currentNode as NodeKey | null) ?? CYCLE_ORDER[cycleIndex]
+              const node = NODES.find((n) => n.key === nodeKey)
+              const stage = (rs.researchState?.mode ?? 'cycle') as string
+              const cycleDone = Object.values(rs.researchState?.cycle ?? {}).filter((v) => (v ?? '').trim()).length
+              const key = `enter-idea-${idea.id}`
+              return (
+                <li key={key}>
+                  <button
+                    type="button"
+                    className="science-enter-idea"
+                    onClick={() => enterIdeaForNode(idea)}
+                  >
+                    <span className="science-enter-idea-id">{idea.id}</span>
+                    <span className="science-enter-idea-body">
+                      <b>{(idea.text || '').slice(0, 48) || (lang === 'en' ? '(empty Idea)' : '（空 Idea）')}</b>
+                      <small>
+                        {node ? (lang === 'en' ? node.en : node.zh) : nodeKey} · {stage} · {cycleDone}/4
+                      </small>
+                    </span>
+                    <span className="science-enter-idea-go">→ {lang === 'en' ? 'Enter' : '进入'}</span>
+                  </button>
+                </li>
+              )
+            })}
+          </ul>
         </div>
       ) : null}
       {/* 产品原则 footer（架构约束） */}
