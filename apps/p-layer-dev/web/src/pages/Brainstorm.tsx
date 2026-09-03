@@ -201,10 +201,10 @@ export function Brainstorm({
             stage.title.en
           }": ${stage.guide.en} ${stage.hint.en}${
             myText ? ` I have written: "${myText}".` : ''
-          } Explain in plain language what this step asks for, with a concrete example.`
+          } Explain in plain language what this step asks for, with a concrete example. Do NOT write conclusions for me — the decision is mine.`
         : `我在做 8 步研究训练，当前是第 ${stepIndex + 1} 步「${stage.title.zh}」：${stage.guide.zh} ${
             stage.hint.zh
-          }${myText ? ` 我已经写了："${myText}"。` : ''} 请用通俗的话解释这一步要做什么，并给我一个可参考的例子。`
+          }${myText ? ` 我已经写了："${myText}"。` : ''} 请用通俗的话解释这一步要做什么，并给我一个可参考的例子，但不要替我写结论——判断由我自己保留。`
 
     setPia({ state: 'loading' })
     try {
