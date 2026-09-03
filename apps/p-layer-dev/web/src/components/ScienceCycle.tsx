@@ -329,12 +329,12 @@ export function ScienceCycle({
     const idea: Idea = {
       id,
       text,
-      origin: "phenomenon",
+      origin: "life",
       category: classifyIdea(text),
       status: "idea",
+      lifecycle: "active",
       created: now,
       tags: [],
-      level: "种子",
       brainstorm: { ...base, steps: { ...base.steps, ...answerSteps } },
     };
     if (idea.brainstorm)

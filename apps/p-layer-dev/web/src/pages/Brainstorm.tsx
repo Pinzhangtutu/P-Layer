@@ -20,6 +20,7 @@ import { StageEditor, type PiaState } from '../components/brainstorm/StageEditor
 import { CompletedView } from '../components/brainstorm/CompletedView'
 import { IdeaForm } from '../components/brainstorm/IdeaForm'
 import { IdeaDatabase } from '../components/brainstorm/IdeaDatabase'
+import { TheoryLibrary } from '../components/brainstorm/TheoryLibrary'
 import { TrainingPanelV1 } from '../components/brainstorm/TrainingPanelV1'
 import { isBound, readZoteroState } from '../lib/literature'
 import { readIdeas, type Idea } from '../lib/ideas'
@@ -391,6 +392,9 @@ export function Brainstorm({
 
         <IdeaDatabase onTrain={(idea) => { setV1Idea(idea); setV1Step(undefined) }} />
       </section>
+
+      {/* §9.2 理论资产库：概念 / 机制 / 命题 / 边界，与 Idea、文献同属研究资产库 */}
+      <TheoryLibrary />
 
       {v1Idea ? (
         <TrainingPanelV1

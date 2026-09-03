@@ -3,7 +3,8 @@ import { useI18n } from '../../i18n'
 import { useProject } from '../../lib/useProject'
 import { askAssistant } from '../../lib/api'
 import { generateBriefPdf } from '../../lib/briefPdf'
-import { readIdeas } from '../../lib/ideas'
+import { readIdeas, maturityOf } from '../../lib/ideas'
+import { MaturityBadge } from './MaturityBadge'
 import {
   STAGES,
   FEEDBACK_TYPES,
@@ -169,9 +170,32 @@ export function TrainingPanelV1({
       p.notes = p.notes || {}
       ;(p.notes as Record<string, unknown>)['rqDraft'] = rqText
       ;(p.notes as Record<string, unknown>)['rqDraftMeta'] = { fromIdea: idea.id, updatedAt: new Date().toISOString() }
+      const list = (p.notes as Record<string, unknown>)['ideasV2']
+      if (Array.isArray(list)) {
+        const found = list.find((x): x is Idea => x && typeof x === 'object' && (x as Idea).id === idea.id)
+        if (found) {
+          found.status = 'promoted'
+          found.lifecycle = 'converted'
+        }
+      }
     })
     onClose()
     onNavigate('flow')
+  }
+
+  /* 暂停：训练状态置「已暂停」，同时把 Idea 资产生命周期置 paused（§9.1） */
+  function pauseIdea() {
+    mutate((p) => {
+      const list = (p.notes as Record<string, unknown>)['ideasV2']
+      if (!Array.isArray(list)) return
+      const found = list.find((x): x is Idea => x && typeof x === 'object' && (x as Idea).id === idea.id)
+      if (!found) return
+      const bb = normBrainstorm(found.brainstorm)
+      bb.status = '已暂停'
+      found.brainstorm = bb
+      if (found.lifecycle === undefined || found.lifecycle === 'active') found.lifecycle = 'paused'
+    })
+    onClose()
   }
 
   /* ---------- 渲染 ---------- */
@@ -208,7 +232,7 @@ export function TrainingPanelV1({
           <button type="button" className="loop-exit-card" onClick={openFeedback}>💬 {t('v1ExitFb')}</button>
           <button type="button" className="loop-exit-card" onClick={() => goto('recheck')}>🔍 {t('v1ExitRecheck')}</button>
           <button type="button" className="loop-exit-card" onClick={promote}>🚀 {t('v1ExitPromote')}</button>
-          <button type="button" className="loop-exit-card" onClick={() => { withBrainstorm((bb) => { bb.status = '已暂停' }); onClose() }}>⏸ {t('v1ExitPause')}</button>
+          <button type="button" className="loop-exit-card" onClick={pauseIdea}>⏸ {t('v1ExitPause')}</button>
         </div>
         {b.pdfs.length ? (
           <div className="loop-pdf-history">
@@ -280,7 +304,10 @@ export function TrainingPanelV1({
           <button type="button" className="btn loop-back" onClick={onClose}>← {t('v1BackToList')}</button>
           <div className="loop-head-title">
             <b>{ideaLabel(idea.text, b)}</b>
-            <span className={`loop-status loop-status-${b.status}`}>{b.status}</span>
+            <span className="loop-head-badges">
+              <MaturityBadge view={maturityOf(liveIdea)} />
+              <span className={`loop-status loop-status-${b.status}`}>{b.status}</span>
+            </span>
           </div>
           <button type="button" className="btn" onClick={() => {
             const ta = document.querySelector<HTMLTextAreaElement>('#loopTraining .loop-textarea')

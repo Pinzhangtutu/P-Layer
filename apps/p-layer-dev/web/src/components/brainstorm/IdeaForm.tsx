@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from 'react'
 import { useI18n } from '../../i18n'
 import {
   IDEA_CATEGORIES,
-  IDEA_LEVELS,
   IDEA_ORIGINS,
   classifyIdea,
   newIdeaId,
@@ -27,9 +26,8 @@ export function IdeaForm({ literatureSource, onLiteratureConsumed }: Props) {
   const [tags, setTags] = useState('')
   const [time, setTime] = useState(() => new Date().toISOString().slice(0, 16))
   const [location, setLocation] = useState('')
-  const [level, setLevel] = useState<string>(IDEA_LEVELS[0])
   const [origin, setOrigin] = useState<string>(
-    literatureSource ? 'literature' : 'phenomenon',
+    literatureSource ? 'reading' : 'life',
   )
   const [caseText, setCaseText] = useState('')
   const [category, setCategory] = useState('auto')
@@ -41,7 +39,7 @@ export function IdeaForm({ literatureSource, onLiteratureConsumed }: Props) {
       setText('')
     }
     if (literatureSource) {
-      setOrigin('literature')
+      setOrigin('reading')
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [literatureSource?.title])
@@ -63,8 +61,7 @@ export function IdeaForm({ literatureSource, onLiteratureConsumed }: Props) {
     setTags('')
     setTime(new Date().toISOString().slice(0, 16))
     setLocation('')
-    setLevel(IDEA_LEVELS[0])
-    setOrigin('phenomenon')
+    setOrigin('life')
     setCaseText('')
     setCategory('auto')
   }
@@ -83,16 +80,16 @@ export function IdeaForm({ literatureSource, onLiteratureConsumed }: Props) {
     const newIdea: Idea = {
       id: newIdeaId(),
       text: value,
-      origin: (origin as Idea['origin']) || 'phenomenon',
+      origin: (origin as Idea['origin']) || 'life',
       literatureSource: literatureSource ?? null,
       category: resolvedCategory,
       status: 'idea',
+      lifecycle: 'active',
       created: new Date().toISOString(),
       tags: tagList,
       time,
       location,
       case: caseText,
-      level,
     }
     mutate((project) => {
       const list = [newIdea, ...readIdeas(project)]
@@ -196,20 +193,6 @@ export function IdeaForm({ literatureSource, onLiteratureConsumed }: Props) {
             onChange={(e) => setLocation(e.target.value)}
             placeholder={t('ideaLocationPlaceholder')}
           />
-        </div>
-        <div className="field">
-          <label>{t('ideaLevelLabel')}</label>
-          <select
-            className="select"
-            value={level}
-            onChange={(e) => setLevel(e.target.value)}
-          >
-            {IDEA_LEVELS.map((l) => (
-              <option key={l} value={l}>
-                {l}
-              </option>
-            ))}
-          </select>
         </div>
         <div className="field idea-origin-field">
           <label>{t('ideaOriginLabel')}</label>

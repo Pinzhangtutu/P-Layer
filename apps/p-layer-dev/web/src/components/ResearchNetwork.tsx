@@ -1,9 +1,10 @@
 import { useMemo } from 'react'
 import { useI18n } from '../i18n'
 import { normBrainstorm, rqOf } from '../lib/brainstormV1'
-import { readIdeas } from '../lib/ideas'
+import { maturityOf, readIdeas } from '../lib/ideas'
 import { readAudits, readLiteratureRadar, readZoteroState } from '../lib/literature'
 import { useProject } from '../lib/useProject'
+import { MaturityBadge } from './brainstorm/MaturityBadge'
 
 type LiteratureNode = {
   id: string
@@ -98,7 +99,10 @@ export function ResearchNetwork() {
                   <span>{idea.id}</span>
                   <b>{compact(idea.text)}</b>
                   {rq ? <p>RQ · {compact(rq, 80)}</p> : <p>{lang === 'en' ? 'No RQ yet' : '尚未形成 RQ'}</p>}
-                  <small>{application ? `${lang === 'en' ? 'Project' : '项目'} · ${application.name}` : idea.level}</small>
+                  <small>
+                    {application ? `${lang === 'en' ? 'Project' : '项目'} · ${application.name}` : null}
+                    <MaturityBadge view={maturityOf(idea)} />
+                  </small>
                 </article>
               )
             })}
