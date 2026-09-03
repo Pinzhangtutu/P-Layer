@@ -1,0 +1,261 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>P-Layer · 科学环循环 Demo</title>
+    <style>
+      :root {
+        --ink: #172d2a;
+        --muted: #748581;
+        --line: #d8e0dc;
+        --paper: #f7f8f5;
+        --card: #ffffff;
+        --green: #39756c;
+        --gold: #b48943;
+      }
+
+      * { box-sizing: border-box; }
+      html, body { min-height: 100%; }
+      body {
+        margin: 0;
+        color: var(--ink);
+        background:
+          radial-gradient(circle at 50% 3%, rgba(220, 235, 229, .8), transparent 28rem),
+          var(--paper);
+        font: 16px/1.55 -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Helvetica Neue", "PingFang SC", sans-serif;
+      }
+
+      main {
+        width: min(1240px, calc(100vw - 40px));
+        min-height: 100vh;
+        margin: 0 auto;
+        padding: 42px 0 64px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+      }
+
+      .demo-label {
+        margin: 0 0 10px;
+        color: var(--green);
+        font-size: 12px;
+        font-weight: 800;
+        letter-spacing: .12em;
+        text-align: center;
+        text-transform: uppercase;
+      }
+
+      h1 {
+        margin: 0;
+        font-size: clamp(28px, 4vw, 48px);
+        letter-spacing: -.04em;
+        text-align: center;
+      }
+
+      .lead {
+        max-width: 640px;
+        margin: 10px auto 34px;
+        color: var(--muted);
+        text-align: center;
+      }
+
+      .cycle-shell {
+        position: relative;
+        padding: 28px 0 22px;
+        border: 1px solid rgba(190, 204, 198, .8);
+        border-radius: 28px;
+        background: rgba(255, 255, 255, .56);
+        box-shadow: 0 24px 70px rgba(42, 70, 61, .1), inset 0 1px 0 rgba(255,255,255,.9);
+        backdrop-filter: blur(16px);
+      }
+
+      .cycle-window {
+        position: relative;
+        height: 318px;
+        overflow: hidden;
+        touch-action: pan-y;
+        user-select: none;
+      }
+
+      .cycle-track { position: absolute; inset: 0; }
+
+      .cycle-card {
+        position: absolute;
+        top: 20px;
+        height: 276px;
+        padding: 28px 30px;
+        border: 1px solid var(--line);
+        border-radius: 22px;
+        background: var(--card);
+        color: var(--ink);
+        box-shadow: 0 14px 34px rgba(31, 63, 52, .07);
+        cursor: pointer;
+        text-align: left;
+        transition: left .46s cubic-bezier(.22,.7,.2,1), width .46s cubic-bezier(.22,.7,.2,1), transform .46s cubic-bezier(.22,.7,.2,1), opacity .46s ease, filter .46s ease, box-shadow .46s ease;
+      }
+
+      .cycle-card.previous { left: -1%; width: 27%; }
+      .cycle-card.active { left: 28.5%; width: 43%; z-index: 3; border-color: rgba(72, 132, 119, .64); box-shadow: 0 22px 45px rgba(42, 96, 82, .17), 0 0 0 4px rgba(94, 160, 143, .09); }
+      .cycle-card.next { left: 74.5%; width: 27%; }
+      .cycle-card.next2 { left: 103%; width: 27%; }
+      .cycle-card.side { transform: scale(.82); opacity: .64; filter: grayscale(.42); }
+      .cycle-card.side:hover { opacity: .85; filter: grayscale(.1); transform: scale(.86); }
+
+      .cycle-card::after {
+        position: absolute;
+        inset: 0;
+        border-radius: inherit;
+        background: linear-gradient(112deg, rgba(176, 184, 181, .05), rgba(127, 139, 135, .2));
+        content: "";
+        pointer-events: none;
+      }
+      .cycle-card.active::after { display: none; }
+
+      .card-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+      .card-key {
+        display: grid;
+        width: 52px;
+        height: 52px;
+        place-items: center;
+        border-radius: 15px;
+        background: #e3efeb;
+        color: var(--green);
+        font: 800 29px/1 Georgia, serif;
+      }
+      .card-icon { font-size: 26px; }
+      .cycle-card strong { display: block; margin-top: 34px; font-size: clamp(18px, 2vw, 26px); letter-spacing: -.03em; }
+      .cycle-card p { max-width: 440px; margin: 10px 0 0; color: var(--muted); font-size: 15px; }
+      .card-current { display: inline-flex; margin-top: 30px; padding: 5px 10px; border-radius: 99px; background: #eef6f2; color: var(--green); font-size: 12px; font-weight: 800; }
+
+      .cycle-arrow {
+        position: absolute;
+        top: 50%;
+        z-index: 5;
+        display: grid;
+        width: 44px;
+        height: 44px;
+        place-items: center;
+        border: 1px solid rgba(173, 191, 184, .9);
+        border-radius: 50%;
+        background: rgba(255,255,255,.88);
+        color: var(--green);
+        font-size: 28px;
+        line-height: 1;
+        cursor: pointer;
+        transform: translateY(-50%);
+        box-shadow: 0 9px 22px rgba(46, 84, 70, .1);
+      }
+      .cycle-arrow:hover, .cycle-arrow:focus-visible { outline: none; background: #eef6f2; border-color: var(--green); }
+      .cycle-arrow.previous { left: 14px; }
+      .cycle-arrow.next { right: 14px; }
+
+      .cycle-meta { display: flex; align-items: center; justify-content: center; gap: 18px; margin-top: 20px; color: var(--muted); font-size: 13px; }
+      .cycle-sequence { color: var(--green); font-weight: 800; letter-spacing: .08em; }
+      .cycle-state { min-width: 150px; text-align: center; }
+
+      .hint { margin: 22px 0 0; color: #8b9894; font-size: 12px; text-align: center; }
+
+      @media (max-width: 760px) {
+        main { width: min(100% - 20px, 620px); padding-top: 26px; }
+        .cycle-shell { padding-top: 18px; }
+        .cycle-window { height: 280px; }
+        .cycle-card { top: 19px; height: 242px; padding: 22px; }
+        .cycle-card.previous { left: -16%; width: 42%; }
+        .cycle-card.active { left: 22%; width: 56%; }
+        .cycle-card.next { left: 80%; width: 42%; }
+        .cycle-card.next2 { left: 120%; width: 42%; }
+        .cycle-card strong { margin-top: 22px; font-size: 18px; }
+        .cycle-card p { font-size: 13px; }
+        .cycle-arrow.previous { left: 8px; }
+        .cycle-arrow.next { right: 8px; }
+        .cycle-meta { flex-direction: column; gap: 5px; }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <p class="demo-label">P-Layer · UI Demo</p>
+      <h1>科学环：水平循环</h1>
+      <p class="lead">只演示界面运动，不包含任何示例 Idea、项目、Deadline 或研究数据。</p>
+
+      <section class="cycle-shell" aria-label="科学环循环演示">
+        <button class="cycle-arrow previous" type="button" aria-label="上一个节点">‹</button>
+        <div class="cycle-window" id="cycleWindow" tabindex="0">
+          <div class="cycle-track" id="cycleTrack"></div>
+        </div>
+        <button class="cycle-arrow next" type="button" aria-label="下一个节点">›</button>
+        <div class="cycle-meta">
+          <span class="cycle-sequence">O → E → T → H → O</span>
+          <span class="cycle-state" id="cycleState" aria-live="polite">当前：O 经验观察</span>
+        </div>
+      </section>
+      <p class="hint">点击左右邻居、拖动卡片，或使用键盘 ← → 旋转</p>
+    </main>
+
+    <script>
+      const nodes = [
+        { key: "O", title: "经验观察", icon: "⌕", desc: "我看见了什么？证据如何获得？" },
+        { key: "E", title: "经验概括", icon: "▦", desc: "证据显示了什么规律？" },
+        { key: "T", title: "理论与概念", icon: "◌", desc: "我如何理解这个现象？" },
+        { key: "H", title: "命题与假设", icon: "✦", desc: "如果这个解释成立，会出现什么？" },
+      ];
+      const track = document.getElementById("cycleTrack");
+      const state = document.getElementById("cycleState");
+      const windowEl = document.getElementById("cycleWindow");
+      let current = 0;
+      let pointerStart = null;
+
+      function nodeAt(offset) {
+        return nodes[(current + offset + nodes.length) % nodes.length];
+      }
+
+      function render() {
+        track.innerHTML = [0, 1, 2, 3].map((offset) => {
+          const node = nodeAt(offset - 1);
+          const position = offset === 1 ? "active" : offset === 0 ? "previous" : offset === 2 ? "next" : "next2";
+          const side = position === "active" ? "" : " side";
+          return `<button class="cycle-card ${position}${side}" type="button" data-key="${node.key}" aria-label="进入 ${node.key} ${node.title}" ${position === "active" ? 'aria-current="step"' : ""}>
+            <span class="card-top"><span class="card-key">${node.key}</span><span class="card-icon" aria-hidden="true">${node.icon}</span></span>
+            <strong>${node.title}</strong>
+            <p>${node.desc}</p>
+            ${position === "active" ? '<span class="card-current">当前选中</span>' : ""}
+          </button>`;
+        }).join("");
+        const selected = nodes[current];
+        state.textContent = `当前：${selected.key} ${selected.title}`;
+        track.querySelectorAll(".cycle-card").forEach((card) => {
+          card.addEventListener("click", () => {
+            const key = card.dataset.key;
+            const index = nodes.findIndex((node) => node.key === key);
+            if (index >= 0) { current = index; render(); }
+          });
+        });
+      }
+
+      function rotate(direction) {
+        current = (current + direction + nodes.length) % nodes.length;
+        render();
+      }
+
+      document.querySelector(".cycle-arrow.previous").addEventListener("click", () => rotate(-1));
+      document.querySelector(".cycle-arrow.next").addEventListener("click", () => rotate(1));
+      windowEl.addEventListener("keydown", (event) => {
+        if (event.key === "ArrowLeft") { event.preventDefault(); rotate(-1); }
+        if (event.key === "ArrowRight") { event.preventDefault(); rotate(1); }
+      });
+      windowEl.addEventListener("pointerdown", (event) => {
+        pointerStart = event.clientX;
+        windowEl.setPointerCapture(event.pointerId);
+      });
+      windowEl.addEventListener("pointerup", (event) => {
+        if (pointerStart === null) return;
+        const distance = event.clientX - pointerStart;
+        pointerStart = null;
+        if (Math.abs(distance) > 46) rotate(distance < 0 ? 1 : -1);
+      });
+      windowEl.addEventListener("pointercancel", () => { pointerStart = null; });
+      render();
+    </script>
+  </body>
+</html>
