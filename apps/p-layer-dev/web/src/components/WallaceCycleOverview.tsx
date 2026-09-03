@@ -1,17 +1,17 @@
 /**
- * Wallace 经典科学环示意图（教科书风格 · 严格十字交叉象限 · 全直角折线）
+ * Wallace 经典科学环示意图（教科书风格 · 严格十字交叉象限 · 4 象限分割 + 方法论红色强调）
  *
- * 4 节点严格按"竖直中线分演绎/归纳"+"水平横线分理论/经验"排到 4 个象限：
- *   - 右上：理论、演绎推论、假设（理论‑演绎）
- *   - 右下：假设检验、决定（经验‑演绎）
- *   - 左下：解释工具·抽样、观察、测量、样本小结（经验‑归纳起点）
- *   - 左上：经验概括、形成概念（理论‑归纳）
+ * 4 节点严格按"竖直中线分演绎/归纳"+"水平横线分理论/经验"分到 4 个象限：
+ *   - 右上：理论、演绎推论、假设、假设检验
+ *   - 右下：决定接受/拒绝假设
+ *   - 左下：解释工具·抽样、观察、测量、样本小结·数值估计
+ *   - 左上：经验概括、形成概念·建立命题·命题整理
  *
- * 中央双椭圆方法论：右上"逻辑演绎"（从理论往下推检验），左下"逻辑推论"（从
- * 经验往上提炼理论）。蓝色虚线直角箭头连接椭圆与外圈节点。
+ * 中央两方法论椭圆：右上"逻辑演绎"（归纳法推检验）、左下"逻辑推论"
+ * （归纳法上升为理论）。方法论与"决定"用红色强调，区别于实际研究节点。
  *
- * 主圈 11 步顺时针 + 4 条辅助线 = 15 段直角折线；用户 09-03 22:5x 明确要求
- * "尽量横平竖直"，不画椭圆环/贝塞尔。
+ * 主圈 11 步顺时针全直角折线 + 4 条红色方法论辅助线 + 浅灰十字分隔线
+ * 让 4 个象限显式呈现。
  */
 import type { CSSProperties } from 'react'
 
@@ -43,7 +43,24 @@ export function WallaceCycleOverview({ className, style, title }: Props) {
           >
             <path d="M0 0 L10 5 L0 10 z" fill="currentColor" />
           </marker>
+          <marker
+            id="wallace-arrow-red"
+            viewBox="0 0 10 10"
+            refX="9"
+            refY="5"
+            markerWidth="6.5"
+            markerHeight="6.5"
+            orient="auto-start-reverse"
+          >
+            <path d="M0 0 L10 5 L0 10 z" fill="#c33" />
+          </marker>
         </defs>
+
+        {/* 十字分隔线（浅灰虚线）—— 让 4 象限显式呈现 */}
+        <g className="wn-crosshair" aria-hidden="true">
+          <line x1="500" y1="20" x2="500" y2="620" />
+          <line x1="40" y1="320" x2="960" y2="320" />
+        </g>
 
         {/* ===== 4 象限 + 顶/底/左/右 节点（顺时针：左上 → 右上 → 右中 → 右中下 → 右下 → 底中 → 底左 → 左下 → 左中 → 左中上 → 回到左上）===== */}
 
@@ -79,11 +96,11 @@ export function WallaceCycleOverview({ className, style, title }: Props) {
           <text x="860" y="355">假设检验</text>
         </g>
 
-        {/* 右下偏左（与"决定"横跨中部）：决定接受/拒绝假设 */}
-        <g className="wn-node wn-node-rect">
-          <rect x="560" y="420" width="200" height="80" rx="6" />
-          <text x="660" y="442">决定接受</text>
-          <text x="660" y="460">或拒绝假设</text>
+        {/* 右下（居中）：决定接受/拒绝假设（红色边框 · 方法论结论的承接节点） */}
+        <g className="wn-node wn-node-rect wn-node-emphasis">
+          <rect x="400" y="420" width="200" height="80" rx="6" />
+          <text x="500" y="442">决定接受</text>
+          <text x="500" y="460">或拒绝假设</text>
         </g>
 
         {/* 底中偏左：解释工具·抽样 */}
@@ -117,15 +134,15 @@ export function WallaceCycleOverview({ className, style, title }: Props) {
           <text x="140" y="255">经验概括</text>
         </g>
 
-        {/* ===== 中央方法论椭圆 ===== */}
-        {/* 逻辑演绎 · 右上中央（连接理论/假设检验 → 演绎法检验） */}
-        <g className="wn-node wn-node-ellipse">
+        {/* ===== 中央方法论椭圆（红色边框 + 浅粉填充 · 强调"方法论 vs 实际研究节点"）===== */}
+        {/* 逻辑演绎 · 右上中央（连接 理论 + 假设检验，演绎法推假设检验） */}
+        <g className="wn-node wn-node-ellipse wn-node-emphasis">
           <ellipse cx="500" cy="210" rx="80" ry="30" />
           <text x="500" y="214">逻辑演绎</text>
         </g>
 
-        {/* 逻辑推论 · 左下中央（连接解释工具/经验概括 → 归纳法建构） */}
-        <g className="wn-node wn-node-ellipse">
+        {/* 逻辑推论 · 左下中央（连接 解释工具·抽样 + 经验概括，归纳法上升为理论） */}
+        <g className="wn-node wn-node-ellipse wn-node-emphasis">
           <ellipse cx="300" cy="430" rx="80" ry="30" />
           <text x="300" y="434">逻辑推论</text>
         </g>
@@ -135,7 +152,7 @@ export function WallaceCycleOverview({ className, style, title }: Props) {
           属于用户
         </text>
 
-        {/* ===== 主圈 11 步箭头（顺时针 · 全部直角折线）===== */}
+        {/* ===== 主圈 11 步箭头（顺时针 · 全部直角折线 · 黑色实线）===== */}
         <g className="wn-arrow">
           {/* 1 形成概念 → 2 理论（顶行水平） */}
           <path d="M240 50 H760" fill="none" markerEnd="url(#wallace-arrow)" />
@@ -145,10 +162,10 @@ export function WallaceCycleOverview({ className, style, title }: Props) {
           <path d="M860 180 V220" fill="none" markerEnd="url(#wallace-arrow)" />
           {/* 4 假设 → 5 假设检验（继续下行） */}
           <path d="M860 280 V320" fill="none" markerEnd="url(#wallace-arrow)" />
-          {/* 5 假设检验 → 6 决定（左下折角：先左后下） */}
-          <path d="M860 380 H660 V420" fill="none" markerEnd="url(#wallace-arrow)" />
-          {/* 6 决定 → 7 解释工具·抽样（左下折角：先下后左） */}
-          <path d="M560 500 V540 H440" fill="none" markerEnd="url(#wallace-arrow)" />
+          {/* 5 假设检验 → 6 决定（左下折角） */}
+          <path d="M860 380 H600 V420" fill="none" markerEnd="url(#wallace-arrow)" />
+          {/* 6 决定 → 7 解释工具·抽样（下左折角） */}
+          <path d="M500 500 V540 H440" fill="none" markerEnd="url(#wallace-arrow)" />
           {/* 7 解释工具·抽样 → 8 观察（底行水平左） */}
           <path d="M340 600 H140" fill="none" markerEnd="url(#wallace-arrow)" />
           {/* 8 观察 → 9 测量（左列竖直上） */}
@@ -161,16 +178,16 @@ export function WallaceCycleOverview({ className, style, title }: Props) {
           <path d="M140 220 V80" fill="none" markerEnd="url(#wallace-arrow)" />
         </g>
 
-        {/* ===== 方法论辅助线（蓝色虚线 · 直角折线）===== */}
+        {/* ===== 方法论辅助线（红色虚线 · 直角折线 · 强调"方法论路径"）===== */}
         <g className="wn-arrow-aux">
           {/* 理论 → 逻辑演绎（理论 底中 → 椭圆 顶中，先下后左） */}
-          <path d="M860 80 V180 H500" fill="none" markerEnd="url(#wallace-arrow)" />
+          <path d="M860 80 V180 H500" fill="none" markerEnd="url(#wallace-arrow-red)" />
           {/* 逻辑演绎 → 假设检验（椭圆 右中 → 假设检验 顶左，先右后下） */}
-          <path d="M580 210 H760 V320" fill="none" markerEnd="url(#wallace-arrow)" />
+          <path d="M580 210 H760 V320" fill="none" markerEnd="url(#wallace-arrow-red)" />
           {/* 解释工具·抽样 → 逻辑推论（解释工具 顶中 → 椭圆 底中，先下后左） */}
-          <path d="M440 540 V460 H300" fill="none" markerEnd="url(#wallace-arrow)" />
+          <path d="M440 540 V460 H300" fill="none" markerEnd="url(#wallace-arrow-red)" />
           {/* 经验概括 → 逻辑推论（经验概括 右中 → 椭圆 左中，先右后下） */}
-          <path d="M240 250 H220 V430" fill="none" markerEnd="url(#wallace-arrow)" />
+          <path d="M240 250 H220 V430" fill="none" markerEnd="url(#wallace-arrow-red)" />
         </g>
       </svg>
     </figure>

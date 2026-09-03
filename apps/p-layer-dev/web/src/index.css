@@ -7287,14 +7287,29 @@ button.app-footer-item:active {
 }
 
 .wallace-overview-svg .wn-arrow-aux {
-  color: var(--blue);
+  color: #c33;
 }
 
 .wallace-overview-svg .wn-arrow-aux path {
-  stroke: currentColor;
-  stroke-width: 1.2;
+  stroke: #c33;
+  stroke-width: 1.3;
   fill: none;
-  stroke-dasharray: 4 3;
+  stroke-dasharray: 5 3;
+}
+
+/* 方法论椭圆 + 决定节点红色高亮：与实际研究节点（黑色边）形成视觉层级 */
+.wallace-overview-svg .wn-node-emphasis rect,
+.wallace-overview-svg .wn-node-emphasis ellipse {
+  fill: #fff5f5;
+  stroke: #c33;
+  stroke-width: 1.6;
+}
+
+/* 十字分隔线：浅灰虚线 · 让 4 象限分隔显式呈现 */
+.wallace-overview-svg .wn-crosshair line {
+  stroke: rgba(120, 130, 140, .35);
+  stroke-width: 1;
+  stroke-dasharray: 4 5;
 }
 
 .wallace-overview-svg .wn-caption {
