@@ -16,6 +16,13 @@ import {
   type GanttStep,
   type Milestone,
 } from '../lib/planning'
+import {
+  studyStageCount,
+  STUDY_STAGES,
+  type Study,
+  type StudyStageKey,
+  type StudyStatus,
+} from '../lib/projects'
 
 type ProjectView = 'planning' | 'network' | 'board'
 
@@ -139,6 +146,36 @@ export function Projects({ initialView = 'planning' }: { initialView?: ProjectVi
       </div>
 
       {view === 'board' ? <Board /> : view === 'network' ? <ResearchNetwork /> : <>
+      <section className="card pm-study-card">
+        <div className="head">
+          <div>
+            <h2>📋 {lang === 'en' ? 'Formal research project · 9-step interface' : '正式研究项目 · 九步执行接口'}</h2>
+            <h3>
+              {lang === 'en'
+                ? 'Study, data versions, analysis records, effects, CIs, deviations and assumption outcomes — reserved per §12; v1 only ships the interface.'
+                : 'Study / 数据版本 / 分析记录 / 效应量与置信区间 / 偏离记录 / 假设结论 —— 按 §12 全部预留接口；v1 仅展示。'}
+            </h3>
+          </div>
+          <span className="tag">{active.study ? `${studyStageCount(active.study)}/${STUDY_STAGES.length}` : lang === 'en' ? 'No study yet' : '尚未导入'}</span>
+        </div>
+        {active.study ? (
+          <StudySummary study={active.study} />
+        ) : (
+          <div className="pm-study-empty">
+            <p>
+              {lang === 'en'
+                ? 'No formal research project yet. v1 does not auto-promote an RQ — the user decides when to import one.'
+                : '当前项目还没有正式研究项目。v1 不会自动把 RQ 升级为项目——由用户决定什么时候导入。'}
+            </p>
+            <small>
+              {lang === 'en'
+                ? 'Once a study is created, the 9-step structure (research question → theory → variables → design → preregistration → recruitment → audit → analysis → back to hypothesis) becomes the contract for any future data, analysis and effect records.'
+                : '一旦 Study 写入，研究问题→理论→变量→设计→预注册→招募→审计→分析→回到假设 九步就成为后续数据、分析、效应量记录的契约。'}
+            </small>
+          </div>
+        )}
+      </section>
+
       <section className="card pm-card">
         <div className="head">
           <div>
@@ -354,4 +391,83 @@ export function Projects({ initialView = 'planning' }: { initialView?: ProjectVi
       </>}
     </div>
   )
+}
+
+/**
+ * 正式研究项目九步执行摘要（§12 数据接口预留）。
+ * v1 仅展示 Study 概要与阶段完成度；真实数据版本/分析/效应量/置信区间流水线待后续工程。
+ */
+function StudySummary({ study }: { study: Study }) {
+  const { lang } = useI18n()
+  const stagesDone = study.record.stagesDone ?? {}
+  const analyses = study.analyses ?? []
+  const versions = study.dataVersions ?? []
+  const effects = study.effects ?? []
+  const outcomes = study.assumptionResults ?? []
+  return (
+    <div className="pm-study-body">
+      <div className="pm-study-status">
+        <span className="pm-study-status-label">{lang === 'en' ? 'Status' : '状态'}</span>
+        <b className={`pm-study-status-value is-${study.record.status}`}>{studyStatusLabel(study.record.status, lang)}</b>
+        <small className="pm-study-rq">{study.record.rqText || (lang === 'en' ? '(no RQ text)' : '（无 RQ 文本）')}</small>
+      </div>
+      <ul className="pm-study-stages">
+        {STUDY_STAGES.map((s) => {
+          const done = !!stagesDone[s.key]
+          return (
+            <li key={s.key} className={`pm-study-stage${done ? ' is-done' : ''}`}>
+              <span className="pm-study-stage-no">{s.no}</span>
+              <span className="pm-study-stage-name">{lang === 'en' ? s.en : s.zh}</span>
+              <em className="pm-study-stage-mark">{done ? '✓' : '·'}</em>
+            </li>
+          )
+        })}
+      </ul>
+      <div className="pm-study-interfaces">
+        <small className="pm-study-interfaces-title">
+          {lang === 'en' ? '§12 reserved interfaces' : '§12 预留接口'}
+        </small>
+        <div className="pm-study-interfaces-grid">
+          <span className="pm-study-interface">
+            <b>DataVersion</b> · {versions.length}
+          </span>
+          <span className="pm-study-interface">
+            <b>Analysis</b> · {analyses.length}
+          </span>
+          <span className="pm-study-interface">
+            <b>Effect / CI</b> · {effects.length}
+          </span>
+          <span className="pm-study-interface">
+            <b>Deviation</b> · {(study.deviations ?? []).length}
+          </span>
+          <span className="pm-study-interface">
+            <b>AssumptionOutcome</b> · {outcomes.length}
+          </span>
+        </div>
+        {analyses.length ? (
+          <ul className="pm-study-analyses">
+            {analyses.map((a) => (
+              <li key={a.id} className={`pm-study-analysis status-${a.status}${a.reserved ? ' is-reserved' : ''}`}>
+                <em>{a.type}</em>
+                {a.stage ? <small> · {a.stage}</small> : null}
+                <span className="pm-study-analysis-status">{a.status}</span>
+                {a.reserved ? <small className="pm-study-analysis-note"> (v1 reserved)</small> : null}
+              </li>
+            ))}
+          </ul>
+        ) : null}
+      </div>
+    </div>
+  )
+}
+
+function studyStatusLabel(status: StudyStatus, lang: 'zh' | 'en'): string {
+  const map: Record<StudyStatus, { zh: string; en: string }> = {
+    draft: { zh: '草稿', en: 'Draft' },
+    active: { zh: '执行中', en: 'Active' },
+    paused: { zh: '已暂停', en: 'Paused' },
+    completed: { zh: '已完成', en: 'Completed' },
+    abandoned: { zh: '已放弃', en: 'Abandoned' },
+  }
+  return map[status]?.[lang] ?? status
 }

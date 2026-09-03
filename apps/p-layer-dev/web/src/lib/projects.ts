@@ -3,6 +3,11 @@
  *
  * 刻意复用旧版 index.html 使用的 localStorage 键（rilProjects / rilActiveProject），
  * 这样 React 新页面和旧版页面读写的是同一份数据，迁移期间不会产生数据割裂。
+ *
+ * 文档 §12 正式研究项目九步执行结构（研究问题→理论与假设→变量定义→研究设计→预注册伦理→
+ * 平台招募→数据冻结→统计分析→回到假设）+ 数据接口预留：
+ * v1 不要求真实实验平台/统计引擎/邮箱/协作，但数据结构必须为未来的 Study、数据版本、
+ * 分析记录、效应量、置信区间、偏离记录和假设结论预留接口（§16 / §18-7）。
  */
 
 export type ApplicationStatus = 'backlog' | 'planning' | 'progress' | 'review' | 'done'
@@ -35,6 +40,131 @@ export type Project = {
   progress?: number
   deadline?: string
   isDemo?: boolean
+  /**
+   * 正式研究项目（§12）。可选字段：项目被用户主动从 RQ 导入正式研究时落盘；
+   * v1 仅提供接口与摘要展示，后续研究/统计/数据版本流水线再实现。
+   */
+  study?: Study
+}
+
+/** 九步研究执行阶段（§12；编号 01–09，与 FLOW_STAGES 的九步研究流程等价） */
+export type StudyStageKey =
+  | 'rq'
+  | 'hypothesis'
+  | 'variables'
+  | 'design'
+  | 'preregistration'
+  | 'recruitment'
+  | 'audit'
+  | 'analysis'
+  | 'reflection'
+
+export const STUDY_STAGES: { key: StudyStageKey; no: string; zh: string; en: string }[] = [
+  { key: 'rq', no: '01', zh: '研究问题', en: 'Research question' },
+  { key: 'hypothesis', no: '02', zh: '理论与研究假设', en: 'Theory & hypothesis' },
+  { key: 'variables', no: '03', zh: '变量定义与操作化', en: 'Variables & measures' },
+  { key: 'design', no: '04', zh: '研究设计与功效分析', en: 'Design & power' },
+  { key: 'preregistration', no: '05', zh: '预注册、伦理与数据收集计划', en: 'Preregistration & plan' },
+  { key: 'recruitment', no: '06', zh: '平台招募与执行', en: 'Recruitment & execution' },
+  { key: 'audit', no: '07', zh: '数据冻结、清理与质量审计', en: 'Freeze & audit' },
+  { key: 'analysis', no: '08', zh: '统计分析与结果解释', en: 'Analysis' },
+  { key: 'reflection', no: '09', zh: '回到假设', en: 'Back to hypothesis' },
+]
+
+/** Study 状态：与 Idea 的「生命周期」不同——Study 状态是执行进度而不是资产生命周期 */
+export type StudyStatus = 'draft' | 'active' | 'paused' | 'completed' | 'abandoned'
+
+export type StudyRecord = {
+  /** 来源 Idea id（§12：RQ 可来自 Idea；同一个 Idea 可以有多个 RQ/Study） */
+  rqIdeaId?: string
+  /** 当时导入的 RQ 文本（v1 自由文本快照） */
+  rqText?: string
+  status: StudyStatus
+  /** 各阶段完成标记（key=StudyStageKey，true=用户已确认完成） */
+  stagesDone?: Partial<Record<StudyStageKey, boolean>>
+  startedAt?: string
+  endedAt?: string
+}
+
+/** 数据版本（§12：每次数据冻结/清理/审计都产生新版本） */
+export type DataVersion = {
+  id: string
+  label: string
+  createdAt: string
+  /** 引用 notes 中的 key（v1 reserved；后续研究流水线写实际数据快照） */
+  notesRef?: string
+  /** 数据冻结时间 */
+  sealedAt?: string
+}
+
+/** 效应量（§12：估计 + 置信区间） */
+export type EffectRecord = {
+  id: string
+  /** 估计量名（如 'd' / 'r' / 'OR' / 'beta'） */
+  estimate?: number
+  ciLow?: number
+  ciHigh?: number
+  unit?: string
+  /** 关联到的 analysis id（§12 关联到对应分析记录） */
+  analysisId?: string
+  note?: string
+}
+
+/** 偏离记录（§12：研究执行中与原计划的偏差，必须可回看） */
+export type DeviationRecord = {
+  id: string
+  stage: StudyStageKey
+  note: string
+  /** 是否已经解决/修正 */
+  resolved: boolean
+  at: string
+}
+
+/** 假设结论（§12 第 9 步回到假设：支持/部分支持/未支持/证据不足） */
+export type AssumptionOutcome = 'support' | 'partial' | 'none' | 'insufficient'
+
+export type AssumptionResult = {
+  id: string
+  outcome: AssumptionOutcome
+  summary?: string
+  at: string
+}
+
+/** 分析记录（§12：脱敏可回看；v1 不执行实际计算，只存接口与占位） */
+export type AnalysisRecord = {
+  id: string
+  /** 分析类型（描述/效应/质性/其它 — v1 reserved） */
+  type: 'descriptive' | 'effect' | 'qualitative' | 'other'
+  /** 关联到的阶段 */
+  stage?: StudyStageKey
+  /** 关联到的数据版本 id */
+  dataVersionId?: string
+  status: 'pending' | 'running' | 'done' | 'failed'
+  /** v1 reserved 标志：true 表示数据已写入但实际分析逻辑尚未实现 */
+  reserved?: boolean
+  createdAt?: string
+}
+
+/** 正式研究项目（§12 数据接口预留） */
+export type Study = {
+  /** 主记录 */
+  record: StudyRecord
+  /** 数据版本序列（§12 多次冻结） */
+  dataVersions?: DataVersion[]
+  /** 分析记录序列（§12 §16 v1 reserved 不执行实际分析） */
+  analyses?: AnalysisRecord[]
+  /** 效应量与置信区间（§12） */
+  effects?: EffectRecord[]
+  /** 偏离记录（§12） */
+  deviations?: DeviationRecord[]
+  /** 假设结论（§12 第 9 步） */
+  assumptionResults?: AssumptionResult[]
+}
+
+/** 把项目暂存研究摘要的「阶段进度」快速读数（0-9） */
+export function studyStageCount(study: Study | undefined): number {
+  if (!study?.record?.stagesDone) return 0
+  return Object.values(study.record.stagesDone).filter(Boolean).length
 }
 
 export const PROJECTS_KEY = 'rilProjects'

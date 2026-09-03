@@ -6959,3 +6959,232 @@ button.app-footer-item:active {
   overflow-wrap: anywhere;
   line-height: 1.5;
 }
+
+/* ---------- 正式研究项目九步执行接口（§12） ---------- */
+.pm-study-card {
+  margin-bottom: 18px;
+}
+
+.pm-study-card .head {
+  align-items: flex-start;
+}
+
+.pm-study-empty {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 14px 16px;
+  border: 1px dashed var(--line);
+  border-radius: 12px;
+  background: rgba(247, 248, 246, 0.6);
+}
+
+.pm-study-empty p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.pm-study-empty small {
+  color: var(--muted);
+  font-size: 11.5px;
+  line-height: 1.55;
+}
+
+.pm-study-body {
+  display: grid;
+  grid-template-columns: 220px minmax(0, 1fr);
+  gap: 18px;
+  align-items: flex-start;
+}
+
+@media (max-width: 760px) {
+  .pm-study-body {
+    grid-template-columns: 1fr;
+  }
+}
+
+.pm-study-status {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.7);
+}
+
+.pm-study-status-label {
+  color: var(--muted);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.pm-study-status-value {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.pm-study-status-value.is-active {
+  color: var(--green);
+}
+
+.pm-study-status-value.is-completed {
+  color: var(--blue);
+}
+
+.pm-study-status-value.is-paused,
+.pm-study-status-value.is-abandoned {
+  color: var(--gold);
+}
+
+.pm-study-rq {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.pm-study-stages {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 6px;
+}
+
+.pm-study-stage {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 9px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.6);
+  font-size: 11.5px;
+}
+
+.pm-study-stage.is-done {
+  background: #e7f4ee;
+  border-color: rgba(24, 150, 100, 0.3);
+  color: #1a7a4e;
+}
+
+.pm-study-stage-no {
+  font-weight: 700;
+  font-size: 10.5px;
+  color: var(--muted);
+  min-width: 18px;
+  text-align: center;
+}
+
+.pm-study-stage.is-done .pm-study-stage-no {
+  color: #1a7a4e;
+}
+
+.pm-study-stage-name {
+  flex: 1 1 auto;
+}
+
+.pm-study-stage-mark {
+  font-style: normal;
+  font-weight: 700;
+}
+
+.pm-study-interfaces {
+  grid-column: 1 / -1;
+  border-top: 1px dashed var(--line);
+  padding-top: 10px;
+  margin-top: 4px;
+}
+
+.pm-study-interfaces-title {
+  color: var(--muted);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.pm-study-interfaces-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+  margin: 6px 0 8px;
+}
+
+.pm-study-interface {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 9px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--card);
+  font-size: 11.5px;
+  color: var(--muted);
+}
+
+.pm-study-interface b {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.pm-study-analyses {
+  list-style: none;
+  margin: 6px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.pm-study-analysis {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 5px 9px;
+  border-radius: 9px;
+  background: rgba(255, 255, 255, 0.6);
+  border: 1px solid var(--line);
+  font-size: 11.5px;
+  color: var(--ink);
+}
+
+.pm-study-analysis em {
+  font-style: normal;
+  font-weight: 700;
+}
+
+.pm-study-analysis-status {
+  margin-left: auto;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: var(--soft);
+  color: var(--blue);
+  font-size: 10.5px;
+}
+
+.pm-study-analysis.status-done .pm-study-analysis-status {
+  background: #e7f4ee;
+  color: #1a7a4e;
+}
+
+.pm-study-analysis.status-failed .pm-study-analysis-status,
+.pm-study-analysis.status-pending .pm-study-analysis-status {
+  background: #fdf3e3;
+  color: #8b5a12;
+}
+
+.pm-study-analysis.is-reserved {
+  border-style: dashed;
+}
+
+.pm-study-analysis-note {
+  color: var(--gold);
+  font-weight: 600;
+}
