@@ -6078,6 +6078,54 @@ button.app-footer-item:active {
   text-align: center;
 }
 
+/* 科学环主界面：以认知导航为中心，不再把教材式 12 节点流程图放在首屏。 */
+.science-cycle-page .science-cycle-intro {
+  display: block;
+  max-width: 820px;
+  margin: 0 auto;
+  padding: 22px 12px 14px;
+  text-align: center;
+}
+.science-cycle-page .science-cycle-intro > div { max-width: 820px; margin: 0 auto; }
+.science-cycle-page .science-cycle-intro h1 { margin: 6px 0 10px; font-size: clamp(30px, 4vw, 46px); }
+.science-cycle-page .science-cycle-intro p { max-width: 760px; margin-inline: auto; }
+.science-cycle-page .science-cycle-citation { margin-top: 12px !important; }
+
+.wc-cycle-orientation {
+  display: flex;
+  max-width: 920px;
+  min-height: 48px;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin: 4px auto 14px;
+  padding: 10px 16px;
+  border: 1px solid rgba(210, 222, 217, .86);
+  border-radius: 999px;
+  background: rgba(249, 251, 249, .78);
+  color: #71827e;
+  font-size: 12px;
+}
+.wc-cycle-orientation-label {
+  color: #3d615b;
+  font-weight: 800;
+  letter-spacing: .03em;
+}
+.wc-cycle-entry {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  border-radius: 999px;
+  color: #425e59;
+  font-weight: 700;
+}
+.wc-cycle-entry b { font: 800 15px/1 Georgia, serif; }
+.wc-cycle-entry.observation { background: rgba(225, 239, 234, .88); }
+.wc-cycle-entry.theory { background: rgba(237, 234, 246, .82); }
+.wc-cycle-orientation-arrow { color: #a1b0ab; font-size: 18px; line-height: 1; }
+.wc-cycle-orientation-note { margin-left: 4px; color: #8a9894; }
+
 /* 推理模式 badge（演绎 / 归纳）+ Pia! 帮助 */
 .science-work-head-right { display: flex; align-items: center; gap: 8px; }
 .wc-reason-badge {
@@ -6340,6 +6388,8 @@ button.app-footer-item:active {
 .wc-principles p:first-child { font-weight: 700; color: var(--ink); font-size: 13.5px; }
 
 @media (max-width: 760px) {
+  .wc-cycle-orientation { flex-wrap: wrap; border-radius: 18px; gap: 7px 9px; }
+  .wc-cycle-orientation-note { flex-basis: 100%; margin: 0; }
   .wc-cycle-shell { padding: 18px 10px 12px; border-radius: 22px; }
   .wc-carousel-viewport { height: 292px; border-radius: 14px; }
   .wc-carousel-card { top: 20px; height: 252px; padding: 20px 22px; border-radius: 18px; }
@@ -7279,4 +7329,39 @@ button.app-footer-item:active {
 .wallace-overview-caption-zh {
   margin-left: 6px;
   color: #9aa3ad;
+}
+
+/* Wallace 教科书视图折叠入口（科学环首屏不占位，需要时展开） */
+.wallace-overview-collapse {
+  max-width: 1000px;
+  margin: 0 auto 14px;
+}
+
+.wallace-overview-collapse summary {
+  cursor: pointer;
+  user-select: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.7);
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+  transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
+}
+
+.wallace-overview-collapse summary:hover {
+  border-color: var(--blue);
+  color: var(--blue);
+  background: #fff;
+}
+
+.wallace-overview-collapse[open] summary {
+  border-color: var(--blue);
+  color: var(--blue);
+  background: #fff;
+  margin-bottom: 12px;
 }

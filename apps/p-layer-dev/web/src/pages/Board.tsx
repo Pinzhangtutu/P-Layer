@@ -5,11 +5,9 @@ import { readIdeas } from '../lib/ideas'
 import {
   TASK_KINDS,
   TASK_STATUSES,
-  ensureTask,
   readBoardTasks,
   seedTask,
   taskKindMeta,
-  taskStatusMeta,
   writeBoardTasks,
   type BoardTask,
   type TaskKind,

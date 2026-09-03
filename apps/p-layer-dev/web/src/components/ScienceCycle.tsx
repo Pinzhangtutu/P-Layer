@@ -9,11 +9,9 @@ import {
 import { useI18n } from "../i18n";
 import { useProject } from "../lib/useProject";
 import { askAssistant } from "../lib/api";
-import { classifyIdea, newIdeaId, readIdeas, type Idea } from "../lib/ideas";
-import { normBrainstorm, emptyResearchState, type ResearchState, type TheorizingState, type CycleState } from "../lib/brainstormV1";
+import { readIdeas } from "../lib/ideas";
 import { WallaceCycleOverview } from "./WallaceCycleOverview";
 
-type Track = "theory" | "empirical";
 export type NodeKey = "E" | "T" | "H" | "O";
 type NodeDef = {
   key: NodeKey;
@@ -89,49 +87,43 @@ const NODES: NodeDef[] = [
   },
 ];
 
-const ENTRY_ORDER: NodeKey[] = ["T", "H", "E", "O"];
-/* 顶部工作导航只呈现四张卡：当前卡片 + 左侧上一项 + 右侧两项。
-   用线性顺序表达 Wallace 环的 x 轴运动：O → E → T → H → O。 */
+/* 用线性顺序表达 Wallace 环的 x 轴运动：O → E → T → H → O。 */
 const CYCLE_ORDER: NodeKey[] = ["O", "E", "T", "H"];
 
-const MINI_QUESTIONS = [
-  {
-    key: "cause",
-    zh: "你认为它可能是因为什么？",
-    en: "What do you think might cause it?",
-  },
-  {
-    key: "boundary",
-    zh: "这个解释有什么前提和边界？",
-    en: "What premises and boundaries does this explanation have?",
-  },
-  {
-    key: "alternative",
-    zh: "还有没有其他可能的解释？",
-    en: "Could there be another explanation?",
-  },
-] as const;
+type NodeNotes = Partial<Record<NodeKey, string>>
 
-function initialBrainstorm(text: string) {
-  const now = new Date().toISOString();
-  return {
-    ...normBrainstorm({}),
-    status: "探索中",
-    currentStep: "idea" as const,
-    steps: { idea: { text, updatedAt: now } },
-  };
+/** 项目级「科学环工作台」：各节点草稿独立于 Idea 库。
+    方案 3（用户 09-03）：科学环 = 认知导航 + 当前节点工作台，
+    不在环内再生成一套 Idea 管理/头脑风暴界面。 */
+const CYCLE_WS_KEY = "cycleWorkspace"
+
+function readCycleWorkspace(project: { notes?: Record<string, unknown> } | null | undefined): NodeNotes {
+  const ws = project?.notes?.[CYCLE_WS_KEY] as { nodeNotes?: NodeNotes } | undefined
+  const notes = ws?.nodeNotes
+  return notes && typeof notes === "object" ? (notes as NodeNotes) : {}
 }
 
+/**
+ * 科学环（方案 3 收敛版 · 2026-09-03）
+ *
+ * 科学环 = 认知导航（O/E/T/H 轮播）+ 当前节点工作台：
+ *   - O/T 双入口提示：经验观察 与 理论/文献 是两大入口（§7.2）
+ *   - 轮播四卡：O → E → T → H → O，点击邻居卡/箭头/拖动/键盘旋转
+ *   - 点当前卡 → 该节点工作卡：写下这一节点要留下的成果，保存到
+ *     项目级 notes.cycleWorkspace（不创建 Idea）；Pia! 只可选讲解
+ *   - CTA「输入一个 Idea」→ 顶部一级「头脑风暴」页（捕捉/澄清/发展 Idea）
+ *
+ * 不再包含：环内 Idea 捕获（mini 澄清/三路分流/theorizing 理论发展区）。
+ * 这些职责交给一级「头脑风暴 + 研究库」。
+ */
 export function ScienceCycle({
   onNavigate,
-  onOpenIdea,
   onNodeSelect,
   initialNode,
   compact = false,
   nodeOnly = false,
 }: {
   onNavigate?: (route: string) => void;
-  onOpenIdea?: (ideaId: string, step: string) => void;
   onNodeSelect?: (node: NodeKey) => void;
   initialNode?: NodeKey;
   compact?: boolean;
@@ -141,26 +133,14 @@ export function ScienceCycle({
   const { lang } = useI18n();
   const { active, mutate } = useProject();
   const [focusedKey, setFocusedKey] = useState<NodeKey | null>(initialNode ?? null);
-  const [mode, setMode] = useState<"idle" | "input" | "mini" | "choose">(
-    "idle",
-  );
-  const [rawIdea, setRawIdea] = useState("");
-  /* 研究推理空间：direction = 分流选择 */
-  const [direction, setDirection] = useState<"undecided" | "theorizing" | "cycle">("undecided");
-  /* 当前 Idea 的研究状态（存 brainstorm.researchState，只追加不覆盖） */
-  const [research, setResearch] = useState<ResearchState>(emptyResearchState());
-  const [miniIndex, setMiniIndex] = useState(0);
-  const [miniAnswers, setMiniAnswers] = useState<Record<string, string>>({});
-  const [savedIdeaId, setSavedIdeaId] = useState<string | null>(null);
   const [cycleIndex, setCycleIndex] = useState(() => {
     const index = initialNode ? CYCLE_ORDER.indexOf(initialNode) : 0;
     return index >= 0 ? index : 0;
   });
-  const [enteredTrack, setEnteredTrack] = useState<Track | null>(null);
-  const [currentNode, setCurrentNode] = useState<NodeKey | null>(null);
+  const [nodeDrafts, setNodeDrafts] = useState<NodeNotes>(() =>
+    readCycleWorkspace(active),
+  );
   const [nodeDraft, setNodeDraft] = useState("");
-  const [nodeDrafts, setNodeDrafts] = useState<Partial<Record<NodeKey, string>>>({});
-  const [suggestedNode, setSuggestedNode] = useState<NodeKey | null>(null);
   const [piaBusy, setPiaBusy] = useState(false);
   const [piaAnswer, setPiaAnswer] = useState("");
   /* 0 = 不滑到工作卡片；> 0 = 触发滚动。
@@ -169,9 +149,15 @@ export function ScienceCycle({
   const [scrollToWorkCard, setScrollToWorkCard] = useState(0);
   const workCardRef = useRef<HTMLElement | null>(null);
   const nodeInputRef = useRef<HTMLTextAreaElement | null>(null);
-  /* 轮播拖动：记录 pointerdown 起点，pointerup 时位移 > 46px 触发旋转 */
+
   const pointerStartX = useRef<number | null>(null);
   const ideas = useMemo(() => (active ? readIdeas(active) : []), [active]);
+
+  /* 方案 3：工作台只管理「当前节点草稿」——环不建立 Idea。
+     active 切换时重新加载项目级 cycleWorkspace。 */
+  useEffect(() => {
+    setNodeDrafts(readCycleWorkspace(active));
+  }, [active]);
 
   /* 两阶段交互（产品文档 §7.4 / §7.5）：
      阶段一：点击邻居卡 / 箭头 / 拖动 / 键盘 ← → → 只旋转环，卡成为「当前位置」；
@@ -188,7 +174,6 @@ export function ScienceCycle({
     setNodeDraft(nodeDrafts[key] || "");
     setScrollToWorkCard((t) => t + 1);
     setPiaAnswer("");
-    setResearch((r) => ({ ...r, mode: "cycle", updatedAt: new Date().toISOString() }));
   }
 
   /* 阶段一：点击环上某卡（非当前卡）→ 该卡转中，成为当前位置；不进入工作区 */
@@ -286,179 +271,80 @@ export function ScienceCycle({
       setNodeDraft(nodeDrafts[initialNode] || "");
       setScrollToWorkCard((value) => value + 1);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialNode]);
 
-  function startIdea() {
-    const scrollTop = window.scrollY;
-    setRawIdea("");
-    setMiniAnswers({});
-    setMiniIndex(0);
-    setSavedIdeaId(null);
-    setEnteredTrack(null);
-    setCurrentNode(null);
-    setSuggestedNode(null);
-    setDirection("undecided");
-    setMode("input");
-    setScrollToWorkCard(0);
-    window.requestAnimationFrame(() => window.scrollTo(0, scrollTop));
-  }
-  function continueMini() {
-    if (rawIdea.trim()) setMode("mini");
-  }
-  /* 输入 Idea 后分流：发展理论 / 检验想法 / 先理解 */
-  function chooseDirection(d: "theorizing" | "cycle") {
-    setDirection(d);
-    setResearch((r) => ({ ...r, mode: d, explore: { direction: d } }));
-  }
-  function openExploreFirst() {
-    setDirection("undecided");
-    setResearch((r) => ({ ...r, mode: "theorizing", explore: { direction: "undecided" } }));
-  }
-
-  function saveIdea(track?: Track, node?: NodeDef) {
-    const text = rawIdea.trim();
-    if (!text || !active) return null;
-    const id = newIdeaId();
-    const now = new Date().toISOString();
-    const base = initialBrainstorm(text);
-    const answerSteps = Object.fromEntries(
-      Object.entries(miniAnswers).map(([key, value]) => [
-        key,
-        { text: value, updatedAt: now },
-      ]),
-    );
-    const idea: Idea = {
-      id,
-      text,
-      origin: "life",
-      category: classifyIdea(text),
-      status: "idea",
-      lifecycle: "active",
-      created: now,
-      tags: [],
-      brainstorm: { ...base, steps: { ...base.steps, ...answerSteps } },
-    };
-    if (idea.brainstorm)
-      idea.brainstorm.scienceCycle = {
-        mini: miniAnswers,
-        enteredTracks: track ? [track] : [],
-        currentNode: node?.key ?? null,
-        completedNodes: [],
-        nodeNotes: node ? { [node.key]: "" } : {},
-      };
-    /* 研究推理空间状态：初始 explore，保存到 idea */
-    if (idea.brainstorm) idea.brainstorm.researchState = emptyResearchState();
-    mutate((project) => {
-      const notes = (project.notes ?? {}) as Record<string, unknown>;
-      const current = Array.isArray(notes.ideasV2) ? notes.ideasV2 : [];
-      notes.ideasV2 = [idea, ...current];
-      project.notes = notes;
-    });
-    setSavedIdeaId(id);
-    return id;
-  }
-
-  function chooseEntryNode(key: NodeKey) {
-    const node = NODES.find((item) => item.key === key);
-    if (!node) return;
-    const track: Track = key === "T" || key === "H" ? "theory" : "empirical";
-    setEnteredTrack(track);
-    setCurrentNode(node.key);
-    const id = saveIdea(track, node);
-    if (id) {
-      if (onOpenIdea) onOpenIdea(id, node.step);
-      else onNavigate?.("brainstorm");
-    }
-  }
-
+  /* 保存当前节点成果：只写入项目级 notes.cycleWorkspace（方案 3），
+     不创建 Idea、不改 ideasV2 —— Idea 的形成属于一级头脑风暴/研究库。 */
   function confirmNode() {
-    if (focusedKey) {
-      const map: Record<NodeKey, keyof CycleState> = { T: "theory", H: "hypothesis", O: "observation", E: "generalization" };
-      setResearch((r) => ({
-        ...r,
-        cycle: { ...r.cycle, [map[focusedKey]]: nodeDraft },
-        updatedAt: new Date().toISOString(),
-      }));
-    }
     const node = NODES.find((n) => n.key === focusedKey);
     if (!node) return;
     setNodeDrafts((drafts) => ({ ...drafts, [node.key]: nodeDraft }));
-    if (savedIdeaId && active) {
-      mutate((project) => {
-        const notes = (project.notes ?? {}) as Record<string, unknown>;
-        const current = Array.isArray(notes.ideasV2) ? notes.ideasV2 : [];
-        notes.ideasV2 = current.map((item) => {
-          if (!item || typeof item !== "object" || (item as Idea).id !== savedIdeaId)
-            return item;
-          const idea = item as Idea;
-          const brainstorm = idea.brainstorm || normBrainstorm({});
-          return {
-            ...idea,
-            brainstorm: {
-              ...brainstorm,
-              steps: {
-                ...brainstorm.steps,
-                [node.step]: { text: nodeDraft, updatedAt: new Date().toISOString() },
-              },
-              scienceCycle: {
-                ...(brainstorm.scienceCycle || {}),
-                currentNode: node.key,
-                nodeNotes: {
-                  ...(brainstorm.scienceCycle?.nodeNotes || {}),
-                  [node.key]: nodeDraft,
-                },
-                completedNodes: Array.from(
-                  new Set([...(brainstorm.scienceCycle?.completedNodes || []), node.key]),
-                ),
-              },
-            },
-          };
-        });
-        project.notes = notes;
+    if (active) {
+      mutate((p) => {
+        const notes = (p.notes ?? {}) as Record<string, unknown>;
+        const prev = (notes[CYCLE_WS_KEY] as { nodeNotes?: NodeNotes } | undefined) ?? {};
+        notes[CYCLE_WS_KEY] = {
+          ...prev,
+          nodeNotes: { ...(prev.nodeNotes ?? {}), [node.key]: nodeDraft },
+          updatedAt: new Date().toISOString(),
+        };
+        p.notes = notes;
       });
     }
-    setCurrentNode(node.key);
-    const nextNode: Partial<Record<NodeKey, NodeKey>> = { T: "H", H: "O", O: "E", E: "T" };
-    setSuggestedNode(nextNode[node.key] ?? null);
     setFocusedKey(null);
-      }
+    setPiaAnswer("");
+  }
 
   const focused = NODES.find((n) => n.key === focusedKey) || null;
   const activeNode = NODES.find((n) => n.key === CYCLE_ORDER[cycleIndex]) ?? null;
-  const q = MINI_QUESTIONS[miniIndex];
-  const miniAnswer = miniAnswers[q.key] || "";
 
   return (
     <div className={`science-cycle-page${nodeOnly ? " science-node-only-page" : ""}`}>
-      {!compact ? <div className="science-cycle-intro">
-        <div>
-          <span className="eyebrow">Research thinking / Wallace</span>
-          <h1>
-            {lang === "en"
-              ? "The Wallace scientific cycle"
-              : "华莱士科学环"}
-          </h1>
-          <p>
-            {lang === "en"
-              ? "Research moves between experience and theory: observations form patterns, patterns connect to concepts, predictions meet evidence, and evidence revises our understanding."
-              : "研究在经验与理论之间往返：从观察形成经验概括，把概括连接到理论与概念，再提出预测，最后用证据修正我们的理解。"}
-          </p>
-          <p className="science-cycle-citation">
-            {lang === "en" ? (
-              <>Adapted from Walter L. Wallace, <cite>The Logic of Science in Sociology</cite> (1971).</>
-            ) : (
-              <>思路参考 Walter L. Wallace，<cite>The Logic of Science in Sociology</cite>（1971）。科学研究可以从经验观察、理论或假设等不同位置进入。</>
-            )}{" "}
-            <a href="https://books.google.com/books?id=-qLrAAAAMAAJ" target="_blank" rel="noreferrer">Source</a>
-          </p>
+      {!compact ? (
+        <div className="science-cycle-intro">
+          <div>
+            <span className="eyebrow">Research thinking / Wallace</span>
+            <h1>
+              {lang === "en"
+                ? "The Wallace scientific cycle"
+                : "华莱士科学环"}
+            </h1>
+            <p>
+              {lang === "en"
+                ? "Research moves between experience and theory: observations form patterns, patterns connect to concepts, predictions meet evidence, and evidence revises our understanding."
+                : "研究在经验与理论之间往返：从观察形成经验概括，把概括连接到理论与概念，再提出预测，最后用证据修正我们的理解。"}
+            </p>
+            <p className="science-cycle-citation">
+              {lang === "en" ? (
+                <>Adapted from Walter L. Wallace, <cite>The Logic of Science in Sociology</cite> (1971).</>
+              ) : (
+                <>思路参考 Walter L. Wallace，<cite>The Logic of Science in Sociology</cite>（1971）。科学研究可以从经验观察、理论或假设等不同位置进入。</>
+              )}{" "}
+              <a href="https://books.google.com/books?id=-qLrAAAAMAAJ" target="_blank" rel="noreferrer">Source</a>
+            </p>
+          </div>
         </div>
-      </div> : null}
+      ) : null}
       <div className="wallace-cycle">
-        {/* 完整 Wallace 经典科学环示意图（教科书风格 · 垂直循环，方法学总览） */}
-        <WallaceCycleOverview className="wallace-overview-card" />
+        {/* 主视觉：O → E → T → H → O 水平循环。
+           Wallace 的完整方法论图默认收起为「讲解视图」；主界面聚焦可操作的
+           四节点认知导航 + 当前节点工作台（方案 3，不占首屏）。 */}
+        <details className="wallace-overview-collapse">
+          <summary>
+            {lang === "en" ? "📘 Wallace's full science cycle (textbook view)" : "📘 华莱士科学环完整示意图（教科书视图）"}
+          </summary>
+          <WallaceCycleOverview />
+        </details>
 
-        {/* 主视觉：O → E → T → H → O 水平循环（对齐 science-cycle-demo.html）：
-           当前卡居中完整，两端邻居露出并灰罩；点击邻居卡 / 箭头 / 拖动 / 键盘旋转。 */}
+        <div className="wc-cycle-orientation" aria-label={lang === "en" ? "Two entry points" : "科学环的两个入口"}>
+          <span className="wc-cycle-orientation-label">{lang === "en" ? "Two ways in" : "两个主要入口"}</span>
+          <span className="wc-cycle-entry observation"><b>O</b> {lang === "en" ? "Observation" : "经验观察"}</span>
+          <span className="wc-cycle-orientation-arrow" aria-hidden="true">↔</span>
+          <span className="wc-cycle-entry theory"><b>T</b> {lang === "en" ? "Theory / Literature" : "理论 / 文献"}</span>
+          <span className="wc-cycle-orientation-note">{lang === "en" ? "An existing Idea may enter at any node." : "已有 Idea 可以从任意节点进入。"}</span>
+        </div>
+
         <div className="wc-cycle-shell">
           <button
             type="button"
@@ -520,124 +406,30 @@ export function ScienceCycle({
           </p>
         </div>
 
-        {/* 工作台 action 行（两阶段交互 §7.4）：先选位置，再显式进入工作区 */}
+        {/* 工作台 action 行：输入 Idea 由一级头脑风暴承载（方案 3）；环内只进节点工作卡 */}
         <div className="wc-cycle-cta">
-          <button type="button" className="btn" onClick={startIdea}>
-            🧠 {lang === "en" ? "Enter an Idea" : "输入一个 Idea"}
+          <button type="button" className="btn primary" onClick={() => onNavigate?.("brainstorm")}>
+            🧠 {lang === "en" ? "Enter an Idea (Brainstorm)" : "输入一个 Idea（去头脑风暴）"}
           </button>
           {activeNode ? (
             focusedKey === activeNode.key ? (
               <button
                 type="button"
-                className="btn primary"
+                className="btn"
                 onClick={() => setScrollToWorkCard((v) => v + 1)}
               >
                 ✓ {lang === "en" ? `Working at ${activeNode.en} · back to workspace` : `正在「${activeNode.zh}」工作 · 回到工作卡`} ↑
               </button>
             ) : (
-              <button type="button" className="btn primary" onClick={() => openWorkNode(activeNode.key)}>
+              <button type="button" className="btn" onClick={() => openWorkNode(activeNode.key)}>
                 {lang === "en" ? `Work at ${activeNode.en} →` : `在「${activeNode.zh}」工作 →`}
               </button>
             )
           ) : null}
         </div>
-
-        {/* Idea 分流：发展理论 / 检验想法 / 先理解（仅在保存 Idea 后出现） */}
-        {savedIdeaId && direction === "undecided" ? (
-          <div className="rs-branch card">
-            <div className="rs-branch-idea"><span className="rs-branch-emoji">🧠</span><strong>{rawIdea}</strong></div>
-            <p className="rs-branch-title">{lang === "en" ? "How would you like to work on this idea?" : "你想怎样发展这个 Idea？"}</p>
-            <div className="rs-branch-actions">
-              <button type="button" className="btn" onClick={() => chooseDirection("theorizing")}>
-                🧩 {lang === "en" ? "Develop the Theory" : "发展这个理论"}
-              </button>
-              <button type="button" className="btn" onClick={() => chooseDirection("cycle")}>
-                🧪 {lang === "en" ? "Test the Idea" : "检验这个想法"}
-              </button>
-              <button type="button" className="btn" onClick={openExploreFirst}>
-                🔍 {lang === "en" ? "Explore First" : "先帮我理解这个 Idea"}
-              </button>
-            </div>
-          </div>
-        ) : null}
-
-        {/* Theorizing 空间：仅当研究推理模式为「理论发展」时展开（纯理论可独立成立） */}
-        {research.mode === "theorizing" ? (
-          <div className="rs-theorizing card">
-            <div className="rs-theorizing-head">
-              <div>
-                <span className="rs-section-tag">Theorizing</span>
-                <strong>{lang === "en" ? "Theory Development" : "理论发展"}</strong>
-                <small>{lang === "en" ? "Not every study needs new data. Sometimes, theory itself is the contribution." : "不是所有研究都需要新的数据。有时候，理论本身就是贡献。"}</small>
-              </div>
-              <button type="button" className="btn small" onClick={() => setResearch((r) => ({ ...r, mode: "cycle", updatedAt: new Date().toISOString() }))}>
-                {lang === "en" ? "Enter empirical test →" : "进入实证检验 →"}
-              </button>
-            </div>
-            <div className="rs-theorizing-grid">
-              {([["literature", "📚", "Literature & Existing Theory", "已有文献与理论", "已有理论、解释、机制、实证发现"],
-                ["puzzle", "⚡", "Gap / Tension / Puzzle", "缺口、张力与谜题", "理论矛盾、无法解释的现象、边界条件"],
-                ["constructs", "🧩", "Constructs", "概念与构念", "定义 construct、区分相似概念、边界"],
-                ["mechanisms", "⚙️", "Mechanism", "机制", "Why does X lead to Y? 因果/心理/社会机制"],
-                ["integration", "🔗", "Integration", "理论整合", "连接理论、比较竞争解释、建立框架"],
-                ["propositions", "💡", "Propositions", "理论命题", "If X, then Y, because M, especially when Z"],
-                ["theory", "📐", "Theory / Conceptual Model", "理论 / 概念模型", "新理论、扩展理论、过程模型、类型学"]] as const).map(([key, icon, en, zh, hint]) => (
-                <label key={key} className="rs-theorizing-field">
-                  <span className="rs-field-label">{icon} {lang === "en" ? en : zh}</span>
-                  <textarea
-                    className="textarea rs-field-input"
-                    value={research.theorizing[key as keyof TheorizingState]}
-                    onChange={(e) =>
-                      setResearch((r) => ({
-                        ...r,
-                        theorizing: { ...r.theorizing, [key]: e.target.value },
-                        updatedAt: new Date().toISOString(),
-                      }))
-                    }
-                    placeholder={hint}
-                  />
-                </label>
-              ))}
-            </div>
-            <div className="rs-theorizing-actions">
-              <button
-                type="button"
-                className="btn"
-                onClick={() => {
-                  /* 保存理论发展为一个 iteration（纯理论可停在此） */
-                  setResearch((r) => ({
-                    ...r,
-                    iterations: [
-                      ...r.iterations,
-                      { v: r.iterations.length + 1, theory: r.theorizing.theory, hypotheses: [], evidence: [], generalization: "", createdAt: new Date().toISOString() },
-                    ],
-                    updatedAt: new Date().toISOString(),
-                  }));
-                }}
-              >
-                {lang === "en" ? "Keep developing theory" : "继续发展理论"}
-              </button>
-              <button type="button" className="btn primary" onClick={() => setResearch((r) => ({ ...r, mode: "cycle", updatedAt: new Date().toISOString() }))}>
-                {lang === "en" ? "Enter empirical test →" : "进入实证检验 →"}
-              </button>
-            </div>
-            {/* 迭代历史（只追加不覆盖） */}
-            {research.iterations.length > 0 ? (
-              <details className="rs-iterations">
-                <summary>{lang === "en" ? `Iteration history (${research.iterations.length})` : `迭代历史（${research.iterations.length}）`}</summary>
-                <div className="rs-iterations-list">
-                  {research.iterations.slice().reverse().map((it) => (
-                    <div key={it.v} className="rs-iter-row">
-                      <span className="rs-iter-v">{lang === "en" ? `It.${it.v}` : `迭代 ${it.v}`}</span>
-                      <span className="rs-iter-theory">{(it.theory || (lang === "en" ? "(empty)" : "（空）")).slice(0, 120)}</span>
-                    </div>
-                  ))}
-                </div>
-              </details>
-            ) : null}
-          </div>
-        ) : null}
       </div>
+
+      {/* 当前节点工作卡（方案 3：保存到项目级 cycleWorkspace，不创建 Idea） */}
       {focused ? (
         <section ref={workCardRef} className="science-node-work-card card">
           <div className="head">
@@ -684,7 +476,7 @@ export function ScienceCycle({
           />
           <div className="science-workspace-actions">
             <button type="button" className="btn primary" onClick={confirmNode}>
-              {lang === "en" ? "Save this step" : "保存这一步"}
+              {lang === "en" ? "Save to cycle workspace" : "保存到环工作台"}
             </button>
             <button
               type="button"
@@ -696,7 +488,7 @@ export function ScienceCycle({
                 focusNode(next);
               }}
             >
-              {lang === "en" ? "Next stage (clockwise)" : "下一步（顺时针）"} →
+              {lang === "en" ? "Next node" : "下一节点（顺时针）"} →
             </button>
             <button
               type="button"
@@ -711,256 +503,11 @@ export function ScienceCycle({
           </div>
         </section>
       ) : null}
-      {savedIdeaId && !focused && suggestedNode ? (
-        <section className="science-cross-track" aria-label={lang === "en" ? "Continue this Idea" : "继续这个 Idea"}>
-          <div>
-            <strong>{lang === "en" ? "Continue the same Idea" : "继续研究同一个 Idea"}</strong>
-            <p>
-              {lang === "en"
-                ? "Your next step can stay on this track or move across the Wallace cycle."
-                : "你可以继续当前研究，也可以把同一个 Idea 带到另一条研究路径。"}
-            </p>
-          </div>
-          <button type="button" className="btn primary" onClick={() => focusNode(suggestedNode)}>
-            {lang === "en"
-              ? `Open ${suggestedNode}`
-              : suggestedNode === "O" ? "进入 O 观察与证据" : suggestedNode === "T" ? "回到 T 理论与概念" : `进入 ${suggestedNode}`}
-            →
-          </button>
-        </section>
-      ) : null}
-      {enteredTrack ? (
-        <div className="science-node-progress">
-          <span>
-            {lang === "en"
-              ? `${enteredTrack === "theory" ? "Theory" : "Empirical"} track entered`
-              : `已进入${enteredTrack === "theory" ? "理论" : "实证"}轨道`}
-          </span>
-          <div>
-            {NODES.map((node) => (
-              <i
-                key={node.key}
-                className={currentNode === node.key ? "current" : ""}
-              >
-                {node.key}
-              </i>
-            ))}
-          </div>
-          <small>
-            {lang === "en"
-              ? `Current node: ${currentNode}`
-              : `当前节点：${currentNode}`}
-          </small>
-        </div>
-      ) : null}
-      {mode !== "idle" ? (
-        <section className="science-idea-workspace card">
-          <div className="head">
-            <div>
-              <h2>
-                {mode === "input"
-                  ? lang === "en"
-                    ? "Start with curiosity"
-                    : "从好奇开始"
-                  : mode === "mini"
-                    ? lang === "en"
-                      ? "One question at a time"
-                      : "一次只问一个问题"
-                    : lang === "en"
-                      ? "Choose where to enter the cycle"
-                      : "选择你的科学环入口"}
-              </h2>
-              <h3>
-                {lang === "en"
-                  ? "Pia! helps clarify; you keep the judgment."
-                  : "Pia! 只帮助澄清，判断始终由你保留。"}
-              </h3>
-            </div>
-            <button
-              type="button"
-              className="btn"
-              onClick={() => setMode("idle")}
-            >
-              ×
-            </button>
-          </div>
-          {mode === "input" ? (
-            <>
-              <label className="field">
-                <span>{lang === "en" ? "Your Idea" : "你的 Idea"}</span>
-                <textarea
-                  className="textarea science-idea-input"
-                  autoFocus
-                  value={rawIdea}
-                  onChange={(e) => setRawIdea(e.target.value)}
-                  placeholder={
-                    lang === "en"
-                      ? "A question, observation, intuition, or confusion…"
-                      : "一个疑问、观察、直觉或困惑……"
-                  }
-                />
-              </label>
-              <div className="science-workspace-actions">
-                <button
-                  type="button"
-                  className="btn primary"
-                  disabled={!rawIdea.trim()}
-                  onClick={continueMini}
-                >
-                  {lang === "en" ? "Begin clarification" : "开始澄清"} →
-                </button>
-                <button
-                  type="button"
-                  className="btn"
-                  disabled={!rawIdea.trim()}
-                  onClick={() => {
-                    const id = saveIdea();
-                    if (id) setMode("idle");
-                  }}
-                >
-                  {lang === "en" ? "Save raw Idea" : "只保存原始 Idea"}
-                </button>
-              </div>
-            </>
-          ) : null}
-          {mode === "mini" ? (
-            <>
-              <div className="science-mini-progress">
-                <span>
-                  {miniIndex + 1} / {MINI_QUESTIONS.length}
-                </span>
-                <i
-                  style={{
-                    width: `${((miniIndex + 1) / MINI_QUESTIONS.length) * 100}%`,
-                  }}
-                />
-              </div>
-              <p className="science-mini-question">
-                {lang === "en" ? q.en : q.zh}
-              </p>
-              <textarea
-                className="textarea science-mini-answer"
-                autoFocus
-                value={miniAnswer}
-                onChange={(e) =>
-                  setMiniAnswers((a) => ({ ...a, [q.key]: e.target.value }))
-                }
-                placeholder={
-                  lang === "en"
-                    ? "Write in your own words…"
-                    : "用你自己的话写下来……"
-                }
-              />
-              <div className="science-workspace-actions">
-                <button
-                  type="button"
-                  className="btn primary"
-                  disabled={!miniAnswer.trim()}
-                  onClick={() =>
-                    miniIndex < MINI_QUESTIONS.length - 1
-                      ? setMiniIndex((i) => i + 1)
-                      : setMode("choose")
-                  }
-                >
-                  {miniIndex < MINI_QUESTIONS.length - 1
-                    ? lang === "en"
-                      ? "Next question"
-                      : "下一个问题"
-                    : lang === "en"
-                      ? "Review my thinking"
-                      : "查看我的思考"}{" "}
-                  →
-                </button>
-                <button
-                  type="button"
-                  className="btn"
-                  onClick={() => setMode("input")}
-                >
-                  {lang === "en" ? "Back" : "返回"}
-                </button>
-              </div>
-              <div className="science-live-result">
-                <b>{lang === "en" ? "Your Idea" : "你的 Idea"}</b>
-                <p>{rawIdea}</p>
-                {Object.entries(miniAnswers)
-                  .filter(([, v]) => v.trim())
-                  .map(([key, value]) => (
-                    <div key={key}>
-                      <small>
-                        {lang === "en"
-                          ? MINI_QUESTIONS.find((x) => x.key === key)?.en
-                          : MINI_QUESTIONS.find((x) => x.key === key)?.zh}
-                      </small>
-                      <p>{value}</p>
-                    </div>
-                  ))}
-              </div>
-            </>
-          ) : null}
-          {mode === "choose" ? (
-            <>
-              <div className="science-mini-summary">
-                <b>
-                  {lang === "en"
-                    ? "You have clarified the Idea enough to choose a direction."
-                    : "你已经完成了初步澄清，可以选择接下来从哪里进入科学环。"}
-                </b>
-                <p>{rawIdea}</p>
-              </div>
-              <p className="science-entry-guidance">
-                {lang === "en"
-                  ? "Research can begin at any node. Choose the part of your Idea that is clearest now."
-                  : "研究可以从任意节点开始。请选择此刻最清楚、最想继续发展的部分。"}
-              </p>
-              <div className="science-track-choice">
-                {ENTRY_ORDER.map((key) => {
-                  const node = NODES.find((item) => item.key === key)!;
-                  const theory = key === "T" || key === "H";
-                  return (
-                    <button
-                      key={key}
-                      type="button"
-                      className={`science-choice-card ${theory ? "theory" : "empirical"}`}
-                      onClick={() => chooseEntryNode(key)}
-                    >
-                      <span className="science-choice-icon" aria-hidden="true">{node.icon}</span>
-                      <strong>{lang === "en" ? node.en : node.zh}</strong>
-                      <small>{lang === "en" ? node.descEn : node.descZh}</small>
-                      <em>
-                        {lang === "en"
-                          ? theory ? "Theory research" : "Empirical research"
-                          : theory ? "理论研究" : "实证研究"}
-                      </em>
-                    </button>
-                  );
-                })}
-              </div>
-              <button
-                type="button"
-                className="btn"
-                onClick={() => {
-                  const id = saveIdea();
-                  if (id) setMode("idle");
-                }}
-              >
-                {lang === "en"
-                  ? "Save without choosing an entry"
-                  : "暂不选择入口，只保存"}
-              </button>
-            </>
-          ) : null}
-        </section>
-      ) : null}
-      {savedIdeaId ? (
-        <span className="science-saved-note" aria-live="polite">
-          {lang === "en" ? "Idea saved locally." : "Idea 已保存在本地。"}
-        </span>
-      ) : null}
       {ideas.length ? (
         <div className="science-existing-note">
           {lang === "en"
-            ? `${ideas.length} saved Idea${ideas.length === 1 ? "" : "s"} in this project.`
-            : `当前项目已有 ${ideas.length} 个 Idea，可从研究探索继续。`}
+            ? `${ideas.length} saved Idea${ideas.length === 1 ? "" : "s"} in this project — brainstorm or manage them from the top nav.`
+            : `当前项目已有 ${ideas.length} 个 Idea — 用顶部「头脑风暴 / 研究库」继续。`}
         </div>
       ) : null}
       {/* 产品原则 footer（架构约束） */}

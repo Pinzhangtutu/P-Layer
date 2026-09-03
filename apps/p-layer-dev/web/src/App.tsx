@@ -46,7 +46,6 @@ export default function App() {
   const [brainFromNav, setBrainFromNav] = useState(false)
   /** 科学环「重新检查假设」→ 跳转头脑风暴并自动打开对应 Idea 的训练（到 recheck 步） */
   const [v1Target, setV1Target] = useState<{ ideaId?: string; step?: string } | null>(null)
-  const [exploreTab] = useState<'idea' | 'literature'>('idea')
   const [exploreNode, setExploreNode] = useState<NodeKey | undefined>(undefined)
   const [exploreTrack, setExploreTrack] = useState<'theory' | 'empirical' | undefined>(undefined)
   const current = NAV.find((item) => item.id === route)
@@ -163,7 +162,7 @@ export default function App() {
             </div>
           ) : null}
           {route === 'home' ? <Home onOpenIdea={openHomeIdea} /> : null}
-          {route === 'explore' || route === 'inspire' ? <ResearchExplore initialTab={exploreTab} initialNode={exploreNode} initialTrack={exploreTrack} /> : null}
+          {route === 'explore' || route === 'inspire' ? <ResearchExplore initialNode={exploreNode} initialTrack={exploreTrack} /> : null}
           {route === 'projects' || route === 'projects-network' ? <Projects initialView={route === 'projects-network' ? 'network' : 'planning'} /> : null}
           {route === 'board' ? <Board /> : null}
           {route === 'flow' ? <Flow /> : null}

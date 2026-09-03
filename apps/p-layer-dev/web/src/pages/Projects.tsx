@@ -20,7 +20,6 @@ import {
   studyStageCount,
   STUDY_STAGES,
   type Study,
-  type StudyStageKey,
   type StudyStatus,
 } from '../lib/projects'
 
