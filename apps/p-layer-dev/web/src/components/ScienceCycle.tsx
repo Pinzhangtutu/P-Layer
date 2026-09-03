@@ -11,6 +11,7 @@ import { useProject } from "../lib/useProject";
 import { askAssistant } from "../lib/api";
 import { classifyIdea, newIdeaId, readIdeas, type Idea } from "../lib/ideas";
 import { normBrainstorm, emptyResearchState, type ResearchState, type TheorizingState, type CycleState } from "../lib/brainstormV1";
+import { WallaceCycleOverview } from "./WallaceCycleOverview";
 
 type Track = "theory" | "empirical";
 export type NodeKey = "E" | "T" | "H" | "O";
@@ -453,6 +454,9 @@ export function ScienceCycle({
         </div>
       </div> : null}
       <div className="wallace-cycle">
+        {/* 完整 Wallace 经典科学环示意图（教科书风格 · 垂直循环，方法学总览） */}
+        <WallaceCycleOverview className="wallace-overview-card" />
+
         {/* 主视觉：O → E → T → H → O 水平循环（对齐 science-cycle-demo.html）：
            当前卡居中完整，两端邻居露出并灰罩；点击邻居卡 / 箭头 / 拖动 / 键盘旋转。 */}
         <div className="wc-cycle-shell">
@@ -509,16 +513,6 @@ export function ScienceCycle({
             onClick={() => rotateCycle(1)}
             aria-label={lang === "en" ? "Next cycle node" : "下一个科学环节点"}
           >›</button>
-          <div className="wc-carousel-meta">
-            <span className="wc-carousel-meta-loop">O → E → T → H → O</span>
-            <span className="wc-carousel-meta-state" aria-live="polite">
-              {activeNode
-                ? (lang === "en"
-                  ? `Current: ${activeNode.key} ${activeNode.en}`
-                  : `当前：${activeNode.key} ${activeNode.zh}`)
-                : ""}
-            </span>
-          </div>
           <p className="wc-carousel-hint">
             {lang === "en"
               ? "Click a neighbor card, drag, or use ← → to rotate. Click the active card to work at that node."

@@ -3811,7 +3811,8 @@ body.flow-glass-focus .flow-step.flow-focus-target {
 /* ---- 浮动滚动指示牌 ---- */
 .scroll-hint {
   position: fixed;
-  right: 22px;
+  left: 50%;
+  transform: translateX(-50%);
   bottom: 22px;
   display: inline-flex;
   align-items: center;
@@ -3835,7 +3836,7 @@ body.flow-glass-focus .flow-step.flow-focus-target {
 .scroll-hint:hover {
   background: #fff;
   color: var(--text);
-  transform: translateY(1px);
+  transform: translateX(-50%) translateY(1px);
 }
 
 .scroll-hint svg {
@@ -7187,4 +7188,67 @@ button.app-footer-item:active {
 .pm-study-analysis-note {
   color: var(--gold);
   font-weight: 600;
+}
+
+/* ---------- Wallace 经典科学环示意图（教科书风格） ---------- */
+.wallace-overview {
+  width: 100%;
+  max-width: 760px;
+  margin: 0 auto 18px;
+  padding: 14px 16px 8px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(247, 244, 233, 0.6), rgba(255, 255, 255, 0.85));
+  color: var(--ink);
+}
+
+.wallace-overview-svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  font-family: inherit;
+}
+
+.wallace-overview-svg text {
+  font-size: 13px;
+  fill: var(--ink);
+}
+
+.wallace-overview-svg .wn-node-rect rect {
+  fill: #fff;
+  stroke: var(--ink);
+  stroke-width: 1.2;
+}
+
+.wallace-overview-svg .wn-node-ellipse ellipse {
+  fill: var(--soft);
+  stroke: var(--blue);
+  stroke-width: 1.4;
+}
+
+.wallace-overview-svg .wn-arrow {
+  color: var(--ink);
+}
+
+.wallace-overview-svg .wn-arrow path {
+  stroke: currentColor;
+  stroke-width: 1.4;
+  fill: none;
+}
+
+.wallace-overview-svg .wn-arrow-aux {
+  color: var(--blue);
+}
+
+.wallace-overview-svg .wn-arrow-aux path {
+  stroke: currentColor;
+  stroke-width: 1.2;
+  fill: none;
+  stroke-dasharray: 4 3;
+}
+
+.wallace-overview-svg .wn-caption {
+  fill: var(--muted);
+  font-size: 11px;
+  font-style: italic;
 }
