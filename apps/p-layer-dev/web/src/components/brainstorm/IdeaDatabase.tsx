@@ -4,18 +4,23 @@ import {
   IDEA_CATEGORIES,
   IDEA_ORIGINS,
   LIFECYCLES,
+  LITERATURE_RELATIONS,
   MATURITY,
   MATURITY_ORDER,
+  appendLiteratureLink,
   clearMaturity,
   deriveMaturity,
+  literatureRelationMeta,
   maturityOf,
   readIdeas,
   recordMaturity,
+  removeLiteratureLink,
   writeIdeas,
   type Idea,
   type IdeaOrigin,
   type IdeaLifecycle,
   type LifecycleBucket,
+  type LiteratureRelationKey,
   type MaturityLevel,
 } from '../../lib/ideas'
 import { useProject } from '../../lib/useProject'
@@ -23,6 +28,9 @@ import { normBrainstorm } from '../../lib/brainstormV1'
 import { MaturityBadge } from './MaturityBadge'
 
 const LIFECYCLE_SELECT: IdeaLifecycle[] = ['active', 'paused', 'archived', 'abandoned', 'converted']
+
+/** 单条连接的新增草稿 */
+type LinkDraft = { title: string; relation: LiteratureRelationKey; why: string }
 
 export function IdeaDatabase({ onTrain }: { onTrain?: (idea: Idea) => void }) {
   const { lang, t } = useI18n()
@@ -33,6 +41,8 @@ export function IdeaDatabase({ onTrain }: { onTrain?: (idea: Idea) => void }) {
   const [expandedId, setExpandedId] = useState<string | null>(null)
   /* 成熟度手动覆盖草稿：行 id → { level?, reason }（不即时落库，点「应用」才写） */
   const [maturityDraft, setMaturityDraft] = useState<Record<string, { mode: 'auto' | 'manual'; level: MaturityLevel; reason: string }>>({})
+  /* 文献连接新增草稿：行 id → { title, relation, why }（点「添加连接」才写） */
+  const [linkDraft, setLinkDraft] = useState<Record<string, LinkDraft>>({})
 
   const bucketOf = (i: Idea): LifecycleBucket => {
     const lc = i.lifecycle ?? (i.status === 'promoted' ? 'converted' : 'active')
@@ -71,6 +81,35 @@ export function IdeaDatabase({ onTrain }: { onTrain?: (idea: Idea) => void }) {
       writeIdeas(project, list)
     })
     if (expandedId === id) setExpandedId(null)
+  }
+
+  /** 追加一条文献连接（§9.3；origin 固定 user——UI 只产生用户确认的连接） */
+  const addLink = (idea: Idea, draft: LinkDraft) => {
+    const title = draft.title.trim()
+    if (!title) return
+    mutate((project) => {
+      const list = readIdeas(project).map((row) => {
+        if (row.id !== idea.id) return row
+        const next = { ...row }
+        appendLiteratureLink(next, { title, relation: draft.relation, origin: 'user', why: draft.why.trim() || undefined })
+        return next
+      })
+      writeIdeas(project, list)
+    })
+    setLinkDraft((prev) => ({ ...prev, [idea.id]: { title: '', relation: 'inspire', why: '' } }))
+  }
+
+  /** 移除一条文献连接（只删连接不删文献） */
+  const dropLink = (idea: Idea, linkId: string) => {
+    mutate((project) => {
+      const list = readIdeas(project).map((row) => {
+        if (row.id !== idea.id) return row
+        const next = { ...row }
+        removeLiteratureLink(next, linkId)
+        return next
+      })
+      writeIdeas(project, list)
+    })
   }
 
   /** 推进到研究问题（≈ §9.1 Converted：转为正式研究项目入口） */
@@ -378,6 +417,114 @@ export function IdeaDatabase({ onTrain }: { onTrain?: (idea: Idea) => void }) {
                                   </ul>
                                 </div>
                               ) : null}
+                            </div>
+
+                            {/* 文献与研究连接（§9.3：Idea ↔ 文献多对多） */}
+                            <div className="idea-detail-links">
+                              <b>📚 {t('ideaLinksTitle')}</b>
+                              <small className="idea-detail-links-note">{t('ideaLinksNote')}</small>
+                              {idea.literatureLinks && idea.literatureLinks.length ? (
+                                <ul className="idea-links-list">
+                                  {idea.literatureLinks.map((link) => {
+                                    const rel = literatureRelationMeta(link.relation)
+                                    return (
+                                      <li key={link.id} className="idea-link-row">
+                                        <em className={`idea-link-rel idea-link-rel-${link.relation}`}>
+                                          {lang === 'en' ? rel.en : rel.zh}
+                                        </em>
+                                        <span className="idea-link-title">{link.title}</span>
+                                        {link.origin !== 'user' ? (
+                                          <i className="idea-link-origin">
+                                            {link.origin === 'pia'
+                                              ? t('ideaLinkOriginPia')
+                                              : link.origin === 'system'
+                                                ? t('ideaLinkOriginSystem')
+                                                : t('ideaLinkOriginUser')}
+                                          </i>
+                                        ) : null}
+                                        {link.why ? <small className="idea-link-why">{link.why}</small> : null}
+                                        <button
+                                          type="button"
+                                          className="btn small ghost"
+                                          onClick={() => dropLink(idea, link.id)}
+                                          title={t('ideaLinkRemove')}
+                                        >
+                                          ✕
+                                        </button>
+                                      </li>
+                                    )
+                                  })}
+                                </ul>
+                              ) : (
+                                <p className="idea-links-empty">
+                                  {lang === 'en'
+                                    ? 'No literature linked yet — add one below.'
+                                    : '还没有连接文献——在下面添加一条。'}
+                                </p>
+                              )}
+                              <div className="idea-link-add">
+                                <input
+                                  className="input"
+                                  value={linkDraft[idea.id]?.title ?? ''}
+                                  placeholder={t('ideaLinkTitlePh')}
+                                  onChange={(e) =>
+                                    setLinkDraft((prev) => ({
+                                      ...prev,
+                                      [idea.id]: {
+                                        title: e.target.value,
+                                        relation: prev[idea.id]?.relation ?? 'inspire',
+                                        why: prev[idea.id]?.why ?? '',
+                                      },
+                                    }))
+                                  }
+                                />
+                                <div className="idea-link-add-meta">
+                                  <select
+                                    className="select"
+                                    value={linkDraft[idea.id]?.relation ?? 'inspire'}
+                                    onChange={(e) =>
+                                      setLinkDraft((prev) => ({
+                                        ...prev,
+                                        [idea.id]: {
+                                          title: prev[idea.id]?.title ?? '',
+                                          relation: e.target.value as LiteratureRelationKey,
+                                          why: prev[idea.id]?.why ?? '',
+                                        },
+                                      }))
+                                    }
+                                    title={t('ideaLinkRelation')}
+                                  >
+                                    {LITERATURE_RELATIONS.map((r) => (
+                                      <option key={r.key} value={r.key}>
+                                        {lang === 'en' ? r.en : r.zh}
+                                      </option>
+                                    ))}
+                                  </select>
+                                  <input
+                                    className="input"
+                                    value={linkDraft[idea.id]?.why ?? ''}
+                                    placeholder={t('ideaLinkWhyPh')}
+                                    onChange={(e) =>
+                                      setLinkDraft((prev) => ({
+                                        ...prev,
+                                        [idea.id]: {
+                                          title: prev[idea.id]?.title ?? '',
+                                          relation: prev[idea.id]?.relation ?? 'inspire',
+                                          why: e.target.value,
+                                        },
+                                      }))
+                                    }
+                                  />
+                                  <button
+                                    type="button"
+                                    className="btn small primary"
+                                    onClick={() => addLink(idea, linkDraft[idea.id] ?? { title: '', relation: 'inspire', why: '' })}
+                                    disabled={!(linkDraft[idea.id]?.title ?? '').trim()}
+                                  >
+                                    ＋ {t('ideaLinkAdd')}
+                                  </button>
+                                </div>
+                              </div>
                             </div>
                           </div>
                         </td>

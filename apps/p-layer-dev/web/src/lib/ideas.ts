@@ -10,6 +10,9 @@
  *   用户可手动覆盖/回退（maturity + maturityLog 记录原因），跟随自动 = 删除覆盖字段。
  * - 生命周期（与成熟度分开）：Active 进行中 → Paused 暂停 → Archived 归档 / Abandoned 放弃
  *   → Converted 转为研究项目；归档不是删除。
+ * - 文献与研究连接（§9.3）：Idea ↔ 文献多对多；每一条连接带关系类型（9 类）、来源
+ *   （user 用户确认 / pia Pia! 建议 / system 系统推断）与「为什么有关」；连接只陈述关系，
+ *   不因网络距离或相似度自动宣称因果。
  */
 
 import type { Project } from './projects'
@@ -22,6 +25,77 @@ export type LiteratureSource = {
   title?: string
   sourceUrl?: string
   evidence?: string
+}
+
+/** 文献 ↔ Idea 关系类型（§9.3 九类） */
+export type LiteratureRelationKey =
+  | 'support'
+  | 'challenge'
+  | 'inspire'
+  | 'refute'
+  | 'theory'
+  | 'measure'
+  | 'method'
+  | 'boundary'
+  | 'changed'
+
+export const LITERATURE_RELATIONS: { key: LiteratureRelationKey; zh: string; en: string }[] = [
+  { key: 'support', zh: '支持', en: 'Supports' },
+  { key: 'challenge', zh: '质疑', en: 'Challenges' },
+  { key: 'inspire', zh: '启发', en: 'Inspires' },
+  { key: 'refute', zh: '反驳', en: 'Refutes' },
+  { key: 'theory', zh: '提供理论', en: 'Provides theory' },
+  { key: 'measure', zh: '提供测量', en: 'Provides measure' },
+  { key: 'method', zh: '提供方法', en: 'Provides method' },
+  { key: 'boundary', zh: '限定边界', en: 'Limits boundary' },
+  { key: 'changed', zh: '改变我的想法', en: 'Changed my thinking' },
+]
+
+export function literatureRelationMeta(key: string): { key: LiteratureRelationKey; zh: string; en: string } {
+  return LITERATURE_RELATIONS.find((r) => r.key === key) ?? LITERATURE_RELATIONS[0]
+}
+
+/** 连接来源：用户确认 / Pia! 建议 / 系统推断（§9.3 需区分且不混淆） */
+export type LinkOrigin = 'user' | 'pia' | 'system'
+
+export const LINK_ORIGINS: { key: LinkOrigin; zh: string; en: string }[] = [
+  { key: 'user', zh: '用户确认', en: 'User confirmed' },
+  { key: 'pia', zh: 'Pia! 建议', en: 'Pia! suggested' },
+  { key: 'system', zh: '系统推断', en: 'System inferred' },
+]
+
+export function linkOriginMeta(key: string): { key: LinkOrigin; zh: string; en: string } {
+  return LINK_ORIGINS.find((o) => o.key === key) ?? LINK_ORIGINS[0]
+}
+
+/** 一条 Idea ↔ 文献连接（§9.3） */
+export type LiteratureLink = {
+  id: string
+  /** 关联文献标题（跨来源统一键：Zotero / 审计 / radar / 自由录入共用标题匹配） */
+  title: string
+  relation: LiteratureRelationKey
+  origin: LinkOrigin
+  /** 为什么有关（§9.3 要求记录） */
+  why?: string
+  /** 连接创建时间 */
+  at?: string
+}
+
+export function newLiteratureLinkId(): string {
+  return 'll' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 6)
+}
+
+/** 往 idea 副本上追加一条文献连接（调用方持有 mutate 副本；就地修改，不返回） */
+export function appendLiteratureLink(idea: Idea, link: Omit<LiteratureLink, 'id' | 'at'>): void {
+  const list = Array.isArray(idea.literatureLinks) ? idea.literatureLinks.slice() : []
+  list.push({ ...link, id: newLiteratureLinkId(), at: new Date().toISOString() })
+  idea.literatureLinks = list
+}
+
+/** 从 idea 副本上删除一条文献连接（只删连接，不删文献；就地修改） */
+export function removeLiteratureLink(idea: Idea, linkId: string): void {
+  const list = Array.isArray(idea.literatureLinks) ? idea.literatureLinks.slice() : []
+  idea.literatureLinks = list.filter((l) => l.id !== linkId)
 }
 
 /** 成熟度等级（§9.1 I0–I6） */
@@ -91,6 +165,8 @@ export type Idea = {
   case?: string
   /** legacy：旧 4 档粗等级（种子/探索中/可检验/优先推进），不再写入与展示 */
   level?: string
+  /** 文献与研究连接（§9.3）：Idea ↔ 文献多对多，带关系类型 / 来源 / why；旧单条 literatureSource 兼容保留 */
+  literatureLinks?: LiteratureLink[]
   /** P-Layer 个人版 v1 · 头脑风暴闭环（10 步训练/版本/反馈/PDF），可选字段，旧记录兼容 */
   brainstorm?: import('./brainstormV1').BrainstormData | null
 }
@@ -210,6 +286,15 @@ function normalizeIdea(raw: Record<string, unknown>): Idea {
     location: typeof raw.location === 'string' ? raw.location : '',
     case: typeof raw.case === 'string' ? raw.case : '',
     level: typeof raw.level === 'string' && raw.level ? raw.level : '种子',
+    literatureLinks: Array.isArray(raw.literatureLinks)
+      ? raw.literatureLinks.filter(
+          (x): x is LiteratureLink =>
+            !!x &&
+            typeof x === 'object' &&
+            typeof (x as LiteratureLink).title === 'string' &&
+            typeof (x as LiteratureLink).id === 'string',
+        )
+      : undefined,
     brainstorm: raw.brainstorm && typeof raw.brainstorm === 'object' ? (raw.brainstorm as Idea['brainstorm']) : null,
   }
 }

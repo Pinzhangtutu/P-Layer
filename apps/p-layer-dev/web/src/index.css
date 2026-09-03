@@ -6798,3 +6798,164 @@ button.app-footer-item:active {
     font-size: 16px;
   }
 }
+
+/* ---------- 文献与研究连接（§9.3） ---------- */
+.idea-detail-links {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 14px;
+  margin-top: 4px;
+  border: 1px dashed var(--line);
+  border-radius: 12px;
+  background: rgba(247, 248, 246, 0.6);
+  grid-column: 1 / -1;
+}
+
+.idea-detail-links > b {
+  font-size: 12.5px;
+  color: var(--ink);
+}
+
+.idea-detail-links-note {
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.6;
+}
+
+.idea-links-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.idea-link-row {
+  display: flex;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 7px 9px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--card);
+}
+
+.idea-link-rel {
+  font-style: normal;
+  font-size: 10.5px;
+  font-weight: 700;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: var(--soft);
+  color: var(--blue);
+  flex: 0 0 auto;
+}
+
+.idea-link-rel-refute,
+.idea-link-rel-challenge {
+  background: #fdecec;
+  color: #b42318;
+}
+
+.idea-link-rel-support,
+.idea-link-rel-theory {
+  background: #e7f4ee;
+  color: #1a7a4e;
+}
+
+.idea-link-rel-changed,
+.idea-link-rel-inspire {
+  background: #fdf3e3;
+  color: #8b5a12;
+}
+
+.idea-link-title {
+  flex: 1 1 220px;
+  min-width: 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+
+.idea-link-origin {
+  font-style: normal;
+  font-size: 10px;
+  color: var(--gold);
+  flex: 0 0 auto;
+}
+
+.idea-link-why {
+  width: 100%;
+  font-size: 11.5px;
+  color: var(--muted);
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+}
+
+.idea-links-empty {
+  margin: 0;
+  color: var(--muted);
+  font-size: 11.5px;
+}
+
+.idea-link-add {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  padding-top: 4px;
+}
+
+.idea-link-add-meta {
+  display: grid;
+  grid-template-columns: 160px minmax(0, 1fr) auto;
+  gap: 7px;
+  align-items: center;
+}
+
+@media (max-width: 760px) {
+  .idea-link-add-meta {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ResearchNetwork 关系行：类型 / 来源 / why */
+.rn-link-paper {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 3px 6px;
+  justify-content: flex-start;
+  font-size: 10.5px;
+}
+
+.rn-link-rel,
+.rn-link-origin {
+  font-style: normal;
+  font-weight: 700;
+  padding: 0 6px;
+  border-radius: 999px;
+  font-size: 9.5px;
+  white-space: nowrap;
+}
+
+.rn-link-rel {
+  background: var(--soft);
+  color: var(--blue);
+}
+
+.rn-link-origin {
+  background: #fdf3e3;
+  color: #8b5a12;
+}
+
+.rn-link-why {
+  width: 100%;
+  font-size: 10px;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+  line-height: 1.5;
+}

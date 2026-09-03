@@ -1,7 +1,14 @@
 import { useMemo } from 'react'
 import { useI18n } from '../i18n'
 import { normBrainstorm, rqOf } from '../lib/brainstormV1'
-import { maturityOf, readIdeas } from '../lib/ideas'
+import {
+  literatureRelationMeta,
+  linkOriginMeta,
+  maturityOf,
+  readIdeas,
+  type LinkOrigin,
+  type LiteratureRelationKey,
+} from '../lib/ideas'
 import { boardTaskCounts } from '../lib/actions'
 import { readAudits, readLiteratureRadar, readZoteroState } from '../lib/literature'
 import { useProject } from '../lib/useProject'
@@ -12,6 +19,17 @@ type LiteratureNode = {
   title: string
   source: string
   ideaIds: string[]
+}
+
+/** 一条关系（§9.3：带类型 / 来源 / why） */
+type RelationRow = {
+  key: string
+  ideaId: string
+  paperId: string
+  paperTitle: string
+  relation?: LiteratureRelationKey
+  origin?: LinkOrigin
+  why?: string
 }
 
 function compact(value: string, max = 66) {
@@ -68,10 +86,42 @@ export function ResearchNetwork() {
     }))
   }, [active, projects, ideas, lang])
 
-  const relations = useMemo(
-    () => literature.flatMap((paper) => paper.ideaIds.map((ideaId) => ({ ideaId, paper }))),
-    [literature],
-  )
+  const relations = useMemo<RelationRow[]>(() => {
+    const rows: RelationRow[] = []
+    ideas.forEach((idea) => {
+      /* 多对多带类型连接（§9.3）优先 */
+      ;(idea.literatureLinks ?? []).forEach((link) => {
+        rows.push({
+          key: `${idea.id}:${link.id}`,
+          ideaId: idea.id,
+          paperId: `link:${link.id}`,
+          paperTitle: link.title,
+          relation: link.relation,
+          origin: link.origin,
+          why: link.why,
+        })
+      })
+      /* 旧版单条 literatureSource 兜底：无 literatureLinks 时按「启发（用户确认）」展示 */
+      if (!(idea.literatureLinks && idea.literatureLinks.length) && idea.literatureSource?.title) {
+        rows.push({
+          key: `${idea.id}:legacy-source`,
+          ideaId: idea.id,
+          paperId: `idea-source:${idea.id}`,
+          paperTitle: idea.literatureSource.title,
+          relation: 'inspire',
+          origin: 'user',
+        })
+      }
+    })
+    /* 未带类型的雷达/审计级联（linkedIdeaIds） */
+    literature.forEach((paper) =>
+      paper.ideaIds.forEach((ideaId) => {
+        if (rows.some((r) => r.ideaId === ideaId && r.paperTitle === paper.title)) return
+        rows.push({ key: `${ideaId}:${paper.id}`, ideaId, paperId: paper.id, paperTitle: paper.title })
+      }),
+    )
+    return rows
+  }, [ideas, literature])
 
   return (
     <section className="card research-network-card">
@@ -124,11 +174,28 @@ export function ResearchNetwork() {
 
         <div className="research-network-links" aria-label={lang === 'en' ? 'Idea-literature relations' : 'Idea—文献关系'}>
           <b>{lang === 'en' ? 'Relations' : '关系'}</b>
-          {relations.map(({ ideaId, paper }) => (
-            <div key={`${ideaId}:${paper.id}`} className="research-network-link-row">
-              <span>{ideaId}</span><i>↔</i><span>{compact(paper.title, 34)}</span>
-            </div>
-          ))}
+          {relations.map((row) => {
+            const rel = row.relation ? literatureRelationMeta(row.relation) : null
+            const origin = row.origin ? linkOriginMeta(row.origin) : null
+            return (
+              <div key={row.key} className="research-network-link-row">
+                <span>{row.ideaId}</span>
+                <i>↔</i>
+                <span className="rn-link-paper">
+                  {compact(row.paperTitle, 26)}
+                  {rel ? (
+                    <em className="rn-link-rel" title={lang === 'en' ? rel.en : rel.zh}>
+                      {lang === 'en' ? rel.en : rel.zh}
+                    </em>
+                  ) : null}
+                  {origin && origin.key !== 'user' ? (
+                    <em className="rn-link-origin">{lang === 'en' ? origin.en : origin.zh}</em>
+                  ) : null}
+                  {row.why ? <small className="rn-link-why">{compact(row.why, 48)}</small> : null}
+                </span>
+              </div>
+            )
+          })}
           {!relations.length ? (
             <div className="research-network-empty relation-empty">
               {lang === 'en'
