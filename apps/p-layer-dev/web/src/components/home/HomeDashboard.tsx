@@ -244,7 +244,7 @@ export function HomeDashboard({
     <div className={`homev2${revealed ? ' is-revealed' : ''}`} ref={rootRef}>
       {/* ===== 三主入口：捕捉 Idea / 管理研究资产 / 继续项目 ===== */}
       <section className="homev2-entries" aria-label={lang === 'en' ? 'Start here' : '从这里开始'}>
-        <button type="button" className="homev2-entry" onClick={() => onGo('inspire')}>
+        <button type="button" className="homev2-entry" onClick={() => onGo('brainstorm')}>
           <span className="homev2-entry-ic" aria-hidden="true">🧠</span>
           <span className="homev2-entry-body">
             <b>{lang === 'en' ? 'Capture an Idea' : '捕捉 Idea'}</b>
@@ -255,7 +255,7 @@ export function HomeDashboard({
             </small>
           </span>
         </button>
-        <button type="button" className="homev2-entry" onClick={() => onGo('inspire')}>
+        <button type="button" className="homev2-entry" onClick={() => onGo('literature')}>
           <span className="homev2-entry-ic" aria-hidden="true">🗂️</span>
           <span className="homev2-entry-body">
             <b>{lang === 'en' ? 'Manage research assets' : '管理研究资产'}</b>
@@ -333,7 +333,7 @@ export function HomeDashboard({
           ) : (
             <div className="homev2-empty">
               <p>{t('homeRecentIdeasEmpty')}</p>
-              <button type="button" className="btn primary small" onClick={() => onGo('inspire')}>
+              <button type="button" className="btn primary small" onClick={() => onGo('brainstorm')}>
                 {t('homeCaptureCta')}
               </button>
             </div>

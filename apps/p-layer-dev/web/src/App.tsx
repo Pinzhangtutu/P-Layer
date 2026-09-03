@@ -14,13 +14,17 @@ import { GlobalFooter } from './components/GlobalFooter'
 import { ScrollHint } from './components/ScrollHint'
 import type { NodeKey } from './components/ScienceCycle'
 
-/** 主导航五入口（P-Layer 统一产品文档 v1.0 §5）：
- *  主页｜科学环｜研究项目｜看板｜设置。
- *  研究资产库（Idea/理论/文献）位于科学环内部（§5.2），不占顶部导航；
- *  literature 路由保留为科学环资产库/文献工作区的渲染页。 */
+/** 主导航七入口（用户 09-03 决策，覆盖文档 v1.0 §5 的五入口）：
+ *  主页｜头脑风暴｜科学环｜研究库｜研究项目｜看板｜设置。
+ *  头脑风暴是「第一步」（捕捉/澄清/发展 Idea，无需先理解科学环）；
+ *  科学环负责 O→E→T→H 之间的移动与再定位；
+ *  研究库管理已有 Idea/理论/文献。brainstorm/literature 仍可从科学环、
+ *  主页与文献内部进入。 */
 const NAV = [
   { id: 'home', zh: '🏠 主页', en: '🏠 Home' },
+  { id: 'brainstorm', zh: '🧠 头脑风暴', en: '🧠 Brainstorm' },
   { id: 'inspire', zh: '🔄 科学环', en: '🔄 Science Cycle' },
+  { id: 'literature', zh: '📚 研究库', en: '📚 Research Library' },
   { id: 'projects', zh: '📁 研究项目', en: '📁 Research Projects' },
   { id: 'board', zh: '📊 看板', en: '📊 Board' },
   { id: 'settings', zh: '⚙️ 设置', en: '⚙️ Settings' },
@@ -37,6 +41,9 @@ export default function App() {
   const { lang, t } = useI18n()
   const [route, setRoute] = useState<string>('home')
   const [navFocus, setNavFocus] = useState<string | null>(null)
+  /** 头脑风暴由顶部导航直入（区别于 Home「继续 Idea」/科学环 recheck 跳入）：
+     直入时不显示「← 返回科学环」条——头脑风暴是第一步，无需先理解科学环 */
+  const [brainFromNav, setBrainFromNav] = useState(false)
   /** 科学环「重新检查假设」→ 跳转头脑风暴并自动打开对应 Idea 的训练（到 recheck 步） */
   const [v1Target, setV1Target] = useState<{ ideaId?: string; step?: string } | null>(null)
   const [exploreTab] = useState<'idea' | 'literature'>('idea')
@@ -113,6 +120,7 @@ export default function App() {
 
   /** 主页「继续最近 Idea / 反馈 / PDF」→ 打开头脑风暴并自动定位到对应 Idea */
   const openHomeIdea = (ideaId: string) => {
+    setBrainFromNav(false)
     setV1Target({ ideaId })
     setRoute('brainstorm')
   }
@@ -130,7 +138,11 @@ export default function App() {
               }`}
               onClick={() => {
                 pulseNavFocus(item.id)
-                if (item.id === 'inspire') {
+                if (item.id === 'brainstorm') {
+                  setV1Target(null)
+                  setBrainFromNav(true)
+                  setRoute('brainstorm')
+                } else if (item.id === 'inspire') {
                   setExploreTrack(undefined)
                   setExploreNode(undefined)
                   setRoute('inspire')
@@ -145,7 +157,7 @@ export default function App() {
         </nav>
 
         <main className="workspace-main">
-          {(route === 'brainstorm' || route === 'flow') ? (
+          {(route === 'flow' || (route === 'brainstorm' && !brainFromNav)) ? (
             <div className="science-return-bar">
               <button type="button" className="btn small" onClick={() => setRoute('explore')}>← {t('v1BackToScience')}</button>
             </div>

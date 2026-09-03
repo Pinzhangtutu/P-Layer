@@ -7193,7 +7193,7 @@ button.app-footer-item:active {
 /* ---------- Wallace 经典科学环示意图（教科书风格） ---------- */
 .wallace-overview {
   width: 100%;
-  max-width: 760px;
+  max-width: 1000px;
   margin: 0 auto 18px;
   padding: 14px 16px 8px;
   border: 1px solid var(--line);
@@ -7265,4 +7265,18 @@ button.app-footer-item:active {
   opacity: 1;
   transform: translateY(0);
   pointer-events: auto;
+}
+
+.wallace-overview-caption {
+  margin: 6px 2px 0;
+  padding-top: 6px;
+  border-top: 1px dashed var(--line);
+  font-size: 10.5px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.wallace-overview-caption-zh {
+  margin-left: 6px;
+  color: #9aa3ad;
 }
