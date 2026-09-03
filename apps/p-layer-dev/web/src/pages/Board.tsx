@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useI18n, type Translate } from '../i18n'
 import { useProject } from '../lib/useProject'
 import { readIdeas } from '../lib/ideas'
+import { PageIntro } from '../components/PageIntro'
 import {
   TASK_KINDS,
   TASK_STATUSES,
@@ -57,10 +58,12 @@ export function Board() {
 
   return (
     <div className="page">
-      <div className="page-head">
-        <h1>{t('board')}</h1>
-        <p>{t('boardSub')}</p>
-      </div>
+      <PageIntro
+        eyebrow="Research actions / To do · Doing · Done"
+        title={t('board')}
+        desc={t('boardSub')}
+        cite={lang === 'en' ? 'The board manages actions, not Ideas — it never replaces the idea library, literature network or the cycle.' : '看板只管理行动与任务——不替代 Idea 库、文献网络或科学环。'}
+      />
 
       <div className="board-toolbar card">
         <div className="board-toolbar-left">

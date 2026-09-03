@@ -24,6 +24,7 @@ import {
 } from '../lib/literature'
 import { setBrainstormDraft } from '../lib/handoff'
 import { useProject } from '../lib/useProject'
+import { PageIntro } from '../components/PageIntro'
 import { AuditForm, AuditList } from '../components/literature/AuditPanel'
 
 export function Literature() {
@@ -175,6 +176,16 @@ export function Literature() {
 
   return (
     <div className="page">
+      <PageIntro
+        eyebrow="Research assets / Idea · Theory · Literature"
+        title={t('literature')}
+        desc={
+          lang === 'en'
+            ? 'The research library manages the assets you build: your Ideas, your theories, and the literature that supports, challenges or refines them — together with the links between them. Search, audit, pin, and connect papers to your thinking.'
+            : '研究库管理你积累的研究资产：已有的 Idea、理论与文献，以及它们之间的连接。检索、审计、收藏，并把文献连接进你的思考。'
+        }
+        cite={lang === 'en' ? 'A link states a relationship; it never claims causality.' : '连接只陈述关系，不自动宣称因果。'}
+      />
       <div className="page-head literature-page-head">
         <div>
           <h1>{t('literature')}</h1>

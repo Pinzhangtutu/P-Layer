@@ -14,6 +14,7 @@ import {
 import { takeBrainstormSeed } from '../lib/handoff'
 import type { LiteratureSource } from '../lib/ideas'
 import { useProject } from '../lib/useProject'
+import { PageIntro } from '../components/PageIntro'
 import { SessionList } from '../components/brainstorm/SessionList'
 import { StageProgress } from '../components/brainstorm/StageProgress'
 import { StageEditor, type PiaState } from '../components/brainstorm/StageEditor'
@@ -284,12 +285,16 @@ export function Brainstorm({
 
   return (
     <div className="page">
-      <div className="page-head">
-        <h1>{t('brainstorm')}</h1>
-        <p className="brain-inspiration brain-inspiration-lg">
-          {lang === 'en' ? t('ideaInspirationEn') : t('ideaInspirationZh')}
-        </p>
-      </div>
+      <PageIntro
+        eyebrow="Research training / Socratic"
+        title={t('brainstorm')}
+        desc={
+          lang === 'en'
+            ? 'Brainstorm turns a raw observation, doubt or intuition into a proposition, prediction, evidence direction and a draft research question — step by step, written by you. It is the starting layer before the science cycle.'
+            : '头脑风暴把一条原始的观察、疑问或直觉，一步步推进为命题、预测、证据方向与初步研究问题——每一步都由你自己写下。它是进入科学环之前的前置孵化层。'
+        }
+        cite={lang === 'en' ? 'Inspired by Socratic questioning and the Wallace model of research reasoning.' : '思路参考苏格拉底式提问与 Wallace 研究推理模型。'}
+      />
 
       <section className="card bt-card">
         <div className="head">

@@ -5,6 +5,7 @@ import { Board } from './Board'
 import { ResearchNetwork } from '../components/ResearchNetwork'
 import { normBrainstorm, rqOf } from '../lib/brainstormV1'
 import { readIdeas, type Idea } from '../lib/ideas'
+import { PageIntro } from '../components/PageIntro'
 import {
   studyStageCount,
   STUDY_STAGES,
@@ -112,10 +113,16 @@ export function Projects({ initialView = 'planning' }: { initialView?: ProjectVi
 
   return (
     <div className="page">
-      <div className="page-head">
-        <h1>{t('projects')}</h1>
-        <p>{t('projectsSub')}</p>
-      </div>
+      <PageIntro
+        eyebrow="Formal research / 9-step execution"
+        title={t('projects')}
+        desc={
+          lang === 'en'
+            ? 'Research projects are formal studies you decide to start — imported from a research question you have formed. Each project follows a nine-step execution structure: research question, theory & hypothesis, variables, design, preregistration, recruitment, audit, analysis, and back to hypothesis.'
+            : '研究项目是你自己决定成立的正式研究：从已形成的研究问题导入，沿九步执行结构推进——研究问题、理论假设、变量、设计、预注册、招募、审计、分析、回到假设。v1 不自动把 RQ 升级为项目，由你主动导入。'
+        }
+        cite={lang === 'en' ? 'v1 never auto-promotes an RQ — you decide when it becomes a project.' : 'v1 不自动把 RQ 升级为项目——由你决定何时正式立项。'}
+      />
 
       <div className="pm-switcher">
         {projects.map((p) => (
