@@ -3702,11 +3702,11 @@ body.flow-glass-focus .flow-step.flow-focus-target {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  /* v1.0 工作版：首屏（Logo + 名言）不再独占整屏，
-     压缩到约半屏高度，让「三主入口 + 最近工作」进入首屏视野（§5.1 层级顺序） */
-  min-height: clamp(330px, 54vh, 560px);
+  /* v1.1：首屏让价值观名言独占（§6.1 + 用户 09-03 调整）；
+     三主入口 / 流程入口 / 最近工作向下滚动才见。 */
+  min-height: calc(100vh - 110px);
   box-sizing: border-box;
-  margin: 0 24px 18px;
+  margin: 0 24px 32px;
   padding: 34px clamp(24px, 5vw, 56px) 46px;
   border: 1px solid var(--line);
   border-radius: 20px;
@@ -7251,4 +7251,18 @@ button.app-footer-item:active {
   fill: var(--muted);
   font-size: 11px;
   font-style: italic;
+}
+
+/* ---------- 主页 · HomeDashboard 「滚下来才看见」（§6.1 用户体验微调） ---------- */
+.homev2 {
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity 0.5s ease, transform 0.5s ease;
+  pointer-events: none;
+}
+
+.homev2.is-revealed {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
 }

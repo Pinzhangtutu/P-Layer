@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useI18n, type Translate } from '../../i18n'
 import { useProject } from '../../lib/useProject'
 import { readIdeas, type Idea } from '../../lib/ideas'
@@ -122,6 +122,26 @@ export function HomeDashboard({
   const { lang, t } = useI18n()
   const { active } = useProject()
 
+  /* 首屏让价值观名言独占：HomeDashboard 在滚到视口内才 fade-up 显现（§6.1 UX） */
+  const rootRef = useRef<HTMLDivElement | null>(null)
+  const [revealed, setRevealed] = useState(false)
+
+  useEffect(() => {
+    const el = rootRef.current
+    if (!el || revealed) return
+    const io = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((e) => e.isIntersecting)) {
+          setRevealed(true)
+          io.disconnect()
+        }
+      },
+      { rootMargin: '0px 0px -15% 0px', threshold: 0.08 },
+    )
+    io.observe(el)
+    return () => io.disconnect()
+  }, [revealed])
+
   const ideas = useMemo(() => (active ? readIdeas(active) : []), [active])
 
   const ideaRows = useMemo<HomeIdeaRow[]>(() => {
@@ -221,7 +241,7 @@ export function HomeDashboard({
   }
 
   return (
-    <div className="homev2">
+    <div className={`homev2${revealed ? ' is-revealed' : ''}`} ref={rootRef}>
       {/* ===== 三主入口：捕捉 Idea / 管理研究资产 / 继续项目 ===== */}
       <section className="homev2-entries" aria-label={lang === 'en' ? 'Start here' : '从这里开始'}>
         <button type="button" className="homev2-entry" onClick={() => onGo('inspire')}>
