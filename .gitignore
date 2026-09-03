@@ -17,15 +17,10 @@ npm-debug.log*
 
 # P-Layer 仓库边界：归档目录的构建/依赖/本地服务产物不入库。
 # 只跟踪 Web 正式入口 apps/p-layer-dev/web/ 与 requirements 文档。
-apps/p-layer-dev/desktop/
-apps/p-layer-dev/r-library/
-apps/p-layer-dev/vendor/
-apps/p-layer-dev/tests/
-apps/p-layer-dev/dist/
-apps/research-p-layer/desktop/
-apps/research-p-layer/dist/
-apps/research-p-layer/r-library/
-apps/research-p-layer/vendor/
+apps/p-layer-dev/*
+!apps/p-layer-dev/README.md
+!apps/p-layer-dev/web/
+apps/research-p-layer/*
 
 # 本地数据 / 密钥（勿提交）
 *.local.json
