@@ -1,13 +1,17 @@
 /**
- * Wallace 经典科学环示意图（教科书风格 · 横平竖直正交环）
+ * Wallace 经典科学环示意图（教科书风格 · 严格十字交叉象限 · 全直角折线）
  *
- * 外圈 12 个矩形节点按顺时针网格排布，箭头走横/竖正交线：
- * 理论 → 演绎推论 → 假设 → 假设检验 → 决定接受或拒绝假设 →
- * 解释工具·抽样 → 观察 → 测量 → 样本小结·数值估计 → 经验概括 →
- * 形成概念·建立命题·命题整理 → 回到理论。
+ * 4 节点严格按"竖直中线分演绎/归纳"+"水平横线分理论/经验"排到 4 个象限：
+ *   - 右上：理论、演绎推论、假设（理论‑演绎）
+ *   - 右下：假设检验、决定（经验‑演绎）
+ *   - 左下：解释工具·抽样、观察、测量、样本小结（经验‑归纳起点）
+ *   - 左上：经验概括、形成概念（理论‑归纳）
  *
- * 环心两个方法论椭圆：逻辑推论（归纳，位于右侧接近假设检验）、
- * 逻辑演绎（演绎，位于左侧），表达 Wallace 1974 的两条方法论路径。
+ * 中央双椭圆方法论：右上"逻辑演绎"（从理论往下推检验），左下"逻辑推论"（从
+ * 经验往上提炼理论）。蓝色虚线直角箭头连接椭圆与外圈节点。
+ *
+ * 主圈 11 步顺时针 + 4 条辅助线 = 15 段直角折线；用户 09-03 22:5x 明确要求
+ * "尽量横平竖直"，不画椭圆环/贝塞尔。
  */
 import type { CSSProperties } from 'react'
 
@@ -20,10 +24,10 @@ type Props = {
 export function WallaceCycleOverview({ className, style, title }: Props) {
   const cls = ['wallace-overview', className].filter(Boolean).join(' ')
   return (
-    <figure className={cls} style={style} aria-label={title ?? 'Wallace 科学环（完整）'} role="img">
+    <figure className={cls} style={style} aria-label={title ?? 'Wallace 科学环（4 象限 + 两条方法论）'} role="img">
       <svg
         className="wallace-overview-svg"
-        viewBox="0 0 1000 560"
+        viewBox="0 0 1000 640"
         xmlns="http://www.w3.org/2000/svg"
         aria-hidden="true"
       >
@@ -41,133 +45,134 @@ export function WallaceCycleOverview({ className, style, title }: Props) {
           </marker>
         </defs>
 
-        {/* ===== 外圈 12 节点（顺时针）===== */}
+        {/* ===== 4 象限 + 顶/底/左/右 节点（顺时针：左上 → 右上 → 右中 → 右中下 → 右下 → 底中 → 底左 → 左下 → 左中 → 左中上 → 回到左上）===== */}
 
-        {/* 顶部中 · 理论 */}
+        {/* 左上：形成概念·建立命题·命题整理 */}
         <g className="wn-node wn-node-rect">
-          <rect x="430" y="24" width="140" height="40" rx="6" />
-          <text x="500" y="50">理论</text>
+          <rect x="40" y="20" width="200" height="60" rx="6" />
+          <text x="140" y="40">形成概念</text>
+          <text x="140" y="55">建立命题</text>
+          <text x="140" y="70">命题整理</text>
         </g>
 
-        {/* 顶部右 · 演绎推论 */}
+        {/* 右上：理论 */}
         <g className="wn-node wn-node-rect">
-          <rect x="830" y="24" width="140" height="40" rx="6" />
-          <text x="900" y="50">演绎推论</text>
+          <rect x="760" y="20" width="200" height="60" rx="6" />
+          <text x="860" y="55">理论</text>
         </g>
 
-        {/* 右列 · 假设 */}
+        {/* 右上偏下：演绎推论 */}
         <g className="wn-node wn-node-rect">
-          <rect x="830" y="150" width="140" height="40" rx="6" />
-          <text x="900" y="176">假设</text>
+          <rect x="760" y="120" width="200" height="60" rx="6" />
+          <text x="860" y="155">演绎推论</text>
         </g>
 
-        {/* 右列 · 假设检验 */}
+        {/* 右中：假设 */}
         <g className="wn-node wn-node-rect">
-          <rect x="830" y="276" width="140" height="40" rx="6" />
-          <text x="900" y="302">假设检验</text>
+          <rect x="760" y="220" width="200" height="60" rx="6" />
+          <text x="860" y="255">假设</text>
         </g>
 
-        {/* 右列下方 · 决定接受或拒绝假设 */}
+        {/* 右中下：假设检验 */}
         <g className="wn-node wn-node-rect">
-          <rect x="660" y="398" width="150" height="56" rx="6" />
-          <text x="735" y="421">决定接受</text>
-          <text x="735" y="438">或拒绝假设</text>
+          <rect x="760" y="320" width="200" height="60" rx="6" />
+          <text x="860" y="355">假设检验</text>
         </g>
 
-        {/* 底部右 · 解释工具 · 抽样 */}
+        {/* 右下偏左（与"决定"横跨中部）：决定接受/拒绝假设 */}
         <g className="wn-node wn-node-rect">
-          <rect x="590" y="478" width="170" height="44" rx="6" />
-          <text x="675" y="506">解释工具 · 抽样</text>
+          <rect x="560" y="420" width="200" height="80" rx="6" />
+          <text x="660" y="442">决定接受</text>
+          <text x="660" y="460">或拒绝假设</text>
         </g>
 
-        {/* 底部左 · 观察 */}
+        {/* 底中偏左：解释工具·抽样 */}
         <g className="wn-node wn-node-rect">
-          <rect x="250" y="478" width="140" height="44" rx="6" />
-          <text x="320" y="506">观察</text>
+          <rect x="340" y="540" width="200" height="60" rx="6" />
+          <text x="440" y="575">解释工具·抽样</text>
         </g>
 
-        {/* 左列下 · 测量 */}
+        {/* 底左：观察 */}
         <g className="wn-node wn-node-rect">
-          <rect x="50" y="430" width="150" height="44" rx="6" />
-          <text x="125" y="458">测量</text>
+          <rect x="40" y="540" width="200" height="60" rx="6" />
+          <text x="140" y="575">观察</text>
         </g>
 
-        {/* 左列 · 样本小结 · 数值估计 */}
+        {/* 左下：测量 */}
         <g className="wn-node wn-node-rect">
-          <rect x="50" y="306" width="150" height="44" rx="6" />
-          <text x="125" y="334">样本小结 · 数值估计</text>
+          <rect x="40" y="420" width="200" height="60" rx="6" />
+          <text x="140" y="455">测量</text>
         </g>
 
-        {/* 左列 · 经验概括 */}
+        {/* 左中：样本小结·数值估计 */}
         <g className="wn-node wn-node-rect">
-          <rect x="50" y="182" width="150" height="40" rx="6" />
-          <text x="125" y="208">经验概括</text>
+          <rect x="40" y="320" width="200" height="80" rx="6" />
+          <text x="140" y="342">样本小结</text>
+          <text x="140" y="360">数值估计</text>
         </g>
 
-        {/* 顶部左 · 形成概念 · 建立命题 · 命题整理 */}
+        {/* 左中上：经验概括 */}
         <g className="wn-node wn-node-rect">
-          <rect x="40" y="24" width="200" height="64" rx="6" />
-          <text x="140" y="44">形成概念</text>
-          <text x="140" y="60">建立命题</text>
-          <text x="140" y="76">命题整理</text>
+          <rect x="40" y="220" width="200" height="60" rx="6" />
+          <text x="140" y="255">经验概括</text>
         </g>
 
-        {/* ===== 环心方法论椭圆 ===== */}
-        {/* 逻辑演绎 · 演绎法（上方，连接理论 → 假设） */}
+        {/* ===== 中央方法论椭圆 ===== */}
+        {/* 逻辑演绎 · 右上中央（连接理论/假设检验 → 演绎法检验） */}
         <g className="wn-node wn-node-ellipse">
-          <ellipse cx="555" cy="130" rx="86" ry="30" />
-          <text x="555" y="134">逻辑演绎</text>
+          <ellipse cx="500" cy="210" rx="80" ry="30" />
+          <text x="500" y="214">逻辑演绎</text>
         </g>
 
-        {/* 逻辑推论 · 归纳法（下方，连接观察 → 经验概括） */}
+        {/* 逻辑推论 · 左下中央（连接解释工具/经验概括 → 归纳法建构） */}
         <g className="wn-node wn-node-ellipse">
-          <ellipse cx="430" cy="380" rx="86" ry="30" />
-          <text x="430" y="384">逻辑推论</text>
+          <ellipse cx="300" cy="430" rx="80" ry="30" />
+          <text x="300" y="434">逻辑推论</text>
         </g>
 
-        {/* 右下角标注 */}
-        <text x="990" y="550" textAnchor="end" className="wn-caption">
+        {/* 旁标：右下「属于用户」 */}
+        <text x="980" y="620" textAnchor="end" className="wn-caption">
           属于用户
         </text>
 
-        {/* ===== 主循环正交箭头（顺时针）===== */}
+        {/* ===== 主圈 11 步箭头（顺时针 · 全部直角折线）===== */}
         <g className="wn-arrow">
-          {/* 理论 → 演绎推论（顶部水平） */}
-          <path d="M570 44 H830" fill="none" markerEnd="url(#wallace-arrow)" />
-          {/* 演绎推论 → 假设（右列向下） */}
-          <path d="M900 64 V150" fill="none" markerEnd="url(#wallace-arrow)" />
-          {/* 假设 → 假设检验（右列向下） */}
-          <path d="M900 190 V276" fill="none" markerEnd="url(#wallace-arrow)" />
-          {/* 假设检验 → 决定（向左，再向下） */}
-          <path d="M830 296 H735 V398" fill="none" markerEnd="url(#wallace-arrow)" />
-          {/* 决定 → 解释工具·抽样（向下偏左） */}
-          <path d="M735 454 V470 H675 V478" fill="none" markerEnd="url(#wallace-arrow)" />
-          {/* 解释工具·抽样 → 观察（底部水平向左） */}
-          <path d="M590 500 H390" fill="none" markerEnd="url(#wallace-arrow)" />
-          {/* 观察 → 测量（先上后左） */}
-          <path d="M250 500 V452 H202" fill="none" markerEnd="url(#wallace-arrow)" />
-          {/* 测量 → 样本小结·数值估计（左列向上） */}
-          <path d="M125 430 V350" fill="none" markerEnd="url(#wallace-arrow)" />
-          {/* 样本小结·数值估计 → 经验概括（左列向上） */}
-          <path d="M125 306 V222" fill="none" markerEnd="url(#wallace-arrow)" />
-          {/* 经验概括 → 形成概念（向上偏右，再进节点底边） */}
-          <path d="M125 182 V110 H145 V92" fill="none" markerEnd="url(#wallace-arrow)" />
-          {/* 形成概念 → 理论（顶部水平向右） */}
-          <path d="M250 44 H430" fill="none" markerEnd="url(#wallace-arrow)" />
+          {/* 1 形成概念 → 2 理论（顶行水平） */}
+          <path d="M240 50 H760" fill="none" markerEnd="url(#wallace-arrow)" />
+          {/* 2 理论 → 3 演绎推论（右下竖直） */}
+          <path d="M860 80 V120" fill="none" markerEnd="url(#wallace-arrow)" />
+          {/* 3 演绎推论 → 4 假设（继续下行） */}
+          <path d="M860 180 V220" fill="none" markerEnd="url(#wallace-arrow)" />
+          {/* 4 假设 → 5 假设检验（继续下行） */}
+          <path d="M860 280 V320" fill="none" markerEnd="url(#wallace-arrow)" />
+          {/* 5 假设检验 → 6 决定（左下折角：先左后下） */}
+          <path d="M860 380 H660 V420" fill="none" markerEnd="url(#wallace-arrow)" />
+          {/* 6 决定 → 7 解释工具·抽样（左下折角：先下后左） */}
+          <path d="M560 500 V540 H440" fill="none" markerEnd="url(#wallace-arrow)" />
+          {/* 7 解释工具·抽样 → 8 观察（底行水平左） */}
+          <path d="M340 600 H140" fill="none" markerEnd="url(#wallace-arrow)" />
+          {/* 8 观察 → 9 测量（左列竖直上） */}
+          <path d="M140 540 V480" fill="none" markerEnd="url(#wallace-arrow)" />
+          {/* 9 测量 → 10 样本小结·数值估计（继续上行） */}
+          <path d="M140 420 V400" fill="none" markerEnd="url(#wallace-arrow)" />
+          {/* 10 样本小结 → 11 经验概括（继续上行） */}
+          <path d="M140 320 V280" fill="none" markerEnd="url(#wallace-arrow)" />
+          {/* 11 经验概括 → 1 形成概念（左上竖直上） */}
+          <path d="M140 220 V80" fill="none" markerEnd="url(#wallace-arrow)" />
         </g>
 
-        {/* ===== 方法论连接（蓝色虚线 · 横平竖直）===== */}
+        {/* ===== 方法论辅助线（蓝色虚线 · 直角折线）===== */}
         <g className="wn-arrow-aux">
-          {/* 逻辑演绎 → 假设（理论→假设的演绎通道） */}
-          <path d="M641 130 H830" fill="none" markerEnd="url(#wallace-arrow)" />
-          {/* 观察 → 逻辑推论（归纳：从观察到经验概括） */}
-          <path d="M320 478 V420 H430" fill="none" markerEnd="url(#wallace-arrow)" />
+          {/* 理论 → 逻辑演绎（理论 底中 → 椭圆 顶中，先下后左） */}
+          <path d="M860 80 V180 H500" fill="none" markerEnd="url(#wallace-arrow)" />
+          {/* 逻辑演绎 → 假设检验（椭圆 右中 → 假设检验 顶左，先右后下） */}
+          <path d="M580 210 H760 V320" fill="none" markerEnd="url(#wallace-arrow)" />
+          {/* 解释工具·抽样 → 逻辑推论（解释工具 顶中 → 椭圆 底中，先下后左） */}
+          <path d="M440 540 V460 H300" fill="none" markerEnd="url(#wallace-arrow)" />
+          {/* 经验概括 → 逻辑推论（经验概括 右中 → 椭圆 左中，先右后下） */}
+          <path d="M240 250 H220 V430" fill="none" markerEnd="url(#wallace-arrow)" />
         </g>
       </svg>
-      <figcaption className="wallace-overview-caption">
-        Adapted from Wallace, W. L. (1971). The Logic of Science in Sociology.
-        <span className="wallace-overview-caption-zh">｜按华莱士（1971）科学环改编 · 横平竖直示意图</span>
-      </figcaption>
     </figure>
   )
 }
