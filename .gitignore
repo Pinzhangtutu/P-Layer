@@ -26,3 +26,4 @@ apps/research-p-layer/*
 *.local.json
 .env
 .env.*
+apps/p-layer-v2/*
