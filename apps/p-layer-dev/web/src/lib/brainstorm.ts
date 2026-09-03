@@ -9,7 +9,7 @@
  * 用户主导命题与 RQ；Pia! 只在用户点「请 Pia 解释」时介入；被放弃的解释只记录不删除。
  */
 
-import { newId, type Application, type Project } from './projects'
+import { type Project } from './projects'
 
 export type StageKey =
   | 'observation'
@@ -204,14 +204,13 @@ export function researchQuestionOf(session: BrainstormSession): string {
 
 /**
  * 完成训练：把第 8 步的 RQ 写进 notes.rqDraft（研究流程第 1 步会读它），
- * 同时在看板里建一张 p75 卡片，标签从 8 步正文继承。
- * 与旧版 finish() 行为一致，只是不再靠 setTimeout 触发全局单例。
+ * 并把会话标记为已完成。
+ *
+ * 旧「学术申请看板」已下线（§5.4）：这里不再创建 application 卡片。
+ * 想正式推进想法时，到研究库（IdeaDatabase）把 Idea 标记为「已推进」，
+ * 或直接在行动看板里新建一条关联该 Idea 的行动。
  */
-export function finishSession(
-  project: Project,
-  session: BrainstormSession,
-  fallbackDescription: string,
-): Application {
+export function completeTraining(project: Project, session: BrainstormSession): void {
   const rq = researchQuestionOf(session)
   const now = new Date().toISOString()
 
@@ -225,32 +224,4 @@ export function finishSession(
     notes.rqDraft = rq
     notes.rqDraftMeta = { fromTraining: session.id, updatedAt: now }
   }
-
-  // 标签只取从正文里切出来的词：旧版额外塞了一个「第 1 步前 24 字」当 tag，
-  // 结果看板卡片上第一个标签永远是一句被截断的话。
-  // 只有正文里切不出任何词时才回退到观察的开头，保证卡片至少有一个标签。
-  const extracted = extractTags(session)
-  const tags = extracted.length ? extracted : [session.steps[0]?.text.trim().slice(0, 12)].filter(Boolean)
-
-  const app: Application = {
-    id: newId(),
-    name: project.name || '',
-    description: rq ? rq.slice(0, 60) : fallbackDescription,
-    owner: '',
-    deadline: '',
-    priority: 'p75',
-    status: 'backlog',
-    tags,
-    ideaId: session.id,
-    notes: rq,
-    createdAt: now,
-    updatedAt: now,
-  }
-
-  project.applications = [...(project.applications ?? []), app]
-
-  if (!project.notes) project.notes = {}
-  ;(project.notes as Record<string, unknown>).lastApplicationId = app.id
-
-  return app
 }

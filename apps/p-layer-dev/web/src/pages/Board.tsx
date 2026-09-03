@@ -1,86 +1,61 @@
-import { useMemo, useRef, useState } from 'react'
-import { useI18n } from '../i18n'
-import {
-  COLUMNS,
-  ensureApplications,
-  newId,
-  sortApplications,
-  type Application,
-  type ApplicationStatus,
-  type SortKey,
-} from '../lib/projects'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { useI18n, type Translate } from '../i18n'
 import { useProject } from '../lib/useProject'
-import { BoardSidebar } from '../components/board/BoardSidebar'
-import { BoardColumn } from '../components/board/BoardColumn'
-import { BoardInspector } from '../components/board/BoardInspector'
+import { readIdeas } from '../lib/ideas'
+import {
+  TASK_KINDS,
+  TASK_STATUSES,
+  ensureTask,
+  readBoardTasks,
+  seedTask,
+  taskKindMeta,
+  taskStatusMeta,
+  writeBoardTasks,
+  type BoardTask,
+  type TaskKind,
+  type TaskStatus,
+} from '../lib/actions'
+import type { Idea } from '../lib/ideas'
 
+/**
+ * 看板：我的研究行动（文档 §5.4）。
+ * 旧「学术申请看板」已下线：applications 数据保留但不再渲染。
+ */
 export function Board() {
   const { lang, t } = useI18n()
-  const { projects, active, mutate } = useProject()
-  const [query, setQuery] = useState('')
-  const [sort, setSort] = useState<SortKey>('deadline')
+  const { active, mutate } = useProject()
   const [selectedId, setSelectedId] = useState<string | null>(null)
-  // 拖拽中的卡片 id 用 ref 保存：drop 时需要同步读取，React state 更新太慢
-  const dragIdRef = useRef<string | null>(null)
+  const dragId = useRef<string | null>(null)
 
-  const all = useMemo(() => ensureApplications(active), [active, projects])
+  const tasks = useMemo(() => readBoardTasks(active), [active])
+  const ideas = useMemo(() => readIdeas(active), [active])
 
-  const visible = useMemo(() => {
-    const q = query.trim().toLowerCase()
-    const filtered = q
-      ? all.filter((a) =>
-          [a.name, a.owner, ...(a.tags ?? [])].some((v) => String(v ?? '').toLowerCase().includes(q)),
-        )
-      : all
-    return sortApplications(filtered, sort)
-  }, [all, query, sort])
+  const selected = tasks.find((x) => x.id === selectedId) ?? null
 
-  const moveApp = (id: string, status: ApplicationStatus) => {
+  const patchTask = (id: string, patch: Partial<BoardTask>) => {
     mutate((project) => {
-      const target = (project.applications ?? []).find((a) => a.id === id)
-      if (target && target.status !== status) {
-        target.status = status
-        target.updatedAt = new Date().toISOString()
-      }
+      const list = readBoardTasks(project).map((x) =>
+        x.id === id ? { ...x, ...patch, updatedAt: new Date().toISOString() } : x,
+      )
+      writeBoardTasks(project, list)
     })
   }
 
-  const updateApp = (id: string, patch: Partial<Application>) => {
-    mutate((project) => {
-      const target = (project.applications ?? []).find((a) => a.id === id)
-      if (target) Object.assign(target, patch)
-    })
+  const addTask = () => {
+    const task = seedTask({ title: lang === 'en' ? 'Untitled action' : '未命名行动', kind: 'reading', status: 'todo' })
+    mutate((project) => writeBoardTasks(project, [...readBoardTasks(project), task]))
+    setSelectedId(task.id)
   }
 
-  const removeApp = (id: string) => {
-    mutate((project) => {
-      project.applications = (project.applications ?? []).filter((a) => a.id !== id)
-    })
+  const removeTask = (id: string) => {
+    mutate((project) => writeBoardTasks(project, readBoardTasks(project).filter((x) => x.id !== id)))
     if (selectedId === id) setSelectedId(null)
   }
 
-  const addApp = () => {
-    const now = new Date().toISOString()
-    const app: Application = {
-      id: newId(),
-      name: lang === 'en' ? 'Untitled item' : '未命名项目',
-      description: '',
-      owner: '',
-      deadline: '',
-      priority: 'p50',
-      status: 'backlog',
-      tags: [],
-      notes: '',
-      createdAt: now,
-      updatedAt: now,
-    }
-    mutate((project) => {
-      project.applications = [...(project.applications ?? []), app]
-    })
-    setSelectedId(app.id)
+  const moveTask = (id: string, status: TaskStatus) => {
+    const found = tasks.find((x) => x.id === id)
+    if (found && found.status !== status) patchTask(id, { status })
   }
-
-  const selected = all.find((a) => a.id === selectedId) ?? null
 
   return (
     <div className="page">
@@ -92,51 +67,230 @@ export function Board() {
       <div className="board-toolbar card">
         <div className="board-toolbar-left">
           <strong>{active.name}</strong>
-          <span className="board-toolbar-count">{t('filteredCount', { a: visible.length, b: all.length })}</span>
+          <span className="board-toolbar-count">{t('boardCount', { a: tasks.length })}</span>
         </div>
-        <button className="btn primary" onClick={addApp}>
-          {t('newApplication')}
+        <button type="button" className="btn primary" onClick={addTask}>
+          ➕ {t('boardAdd')}
         </button>
       </div>
 
-      <div className="board-layout">
-        <BoardSidebar
-          apps={visible}
-          total={all.length}
-          query={query}
-          onQuery={setQuery}
-          sort={sort}
-          onSort={setSort}
-          selectedId={selectedId}
-          onSelect={setSelectedId}
-        />
-
-        <div className="board-kanban">
-          {COLUMNS.map((col) => (
-            <BoardColumn
-              key={col.key}
-              column={col}
-              apps={visible.filter((a) => a.status === col.key)}
-              lang={lang}
-              selectedId={selectedId}
-              onSelect={setSelectedId}
-              onDropCard={(status, transferId) => {
-                const id = transferId || dragIdRef.current
-                if (id) moveApp(id, status)
-                dragIdRef.current = null
-              }}
-              onDragStart={(id) => {
-                dragIdRef.current = id
-              }}
-              onDragEnd={() => {
-                dragIdRef.current = null
-              }}
-            />
-          ))}
+      <div className="board-layout is-actions">
+        <div className="board-kanban is-actions">
+          {TASK_STATUSES.map((col) => {
+            const list = tasks.filter((x) => x.status === col.key)
+            return (
+              <section
+                key={col.key}
+                className="board-column act-col"
+                data-status={col.key}
+                onDragOver={(e) => e.preventDefault()}
+                onDrop={(e) => {
+                  e.preventDefault()
+                  const id = e.dataTransfer.getData('text/plain') || dragId.current
+                  dragId.current = null
+                  if (id) moveTask(id, col.key)
+                }}
+              >
+                <div className="board-column-head">
+                  <span className="board-column-title">
+                    <i className="act-col-dot" style={{ background: col.dot }} />
+                    {lang === 'en' ? col.en : col.zh}
+                  </span>
+                  <span className="board-column-count">{list.length}</span>
+                </div>
+                <div className="board-column-body">
+                  {list.map((task) => {
+                    const kind = taskKindMeta(task.kind)
+                    const linked = task.ideaId ? ideas.find((i: Idea) => i.id === task.ideaId) : null
+                    const isSel = task.id === selectedId
+                    return (
+                      <article
+                        key={task.id}
+                        className={`board-card act-card${isSel ? ' is-selected' : ''}`}
+                        draggable
+                        data-task-id={task.id}
+                        onDragStart={(e) => {
+                          dragId.current = task.id
+                          e.dataTransfer.setData('text/plain', task.id)
+                          e.dataTransfer.effectAllowed = 'move'
+                        }}
+                        onDragEnd={() => {
+                          dragId.current = null
+                        }}
+                        onClick={() => setSelectedId(task.id)}
+                      >
+                        <div className="board-card-top">
+                          <span className="board-avatar act-avatar" style={{ background: kind.color }}>
+                            {kind.icon}
+                          </span>
+                          <div className="board-card-title">
+                            <strong>{task.title || (lang === 'en' ? 'Untitled action' : '未命名行动')}</strong>
+                            <small>{lang === 'en' ? kind.en : kind.zh}</small>
+                          </div>
+                        </div>
+                        {linked ? (
+                          <div className="board-tags">
+                            <span className="board-tag act-idea-chip">💡 {compact(linked.text, 40)}</span>
+                          </div>
+                        ) : null}
+                        {task.deadline ? (
+                          <div className="board-card-foot">
+                            <span className="board-day act-date">{String(task.deadline).slice(0, 10)}</span>
+                          </div>
+                        ) : null}
+                      </article>
+                    )
+                  })}
+                  {!list.length ? (
+                    <p className="board-column-empty">{t('boardColEmpty')}</p>
+                  ) : null}
+                </div>
+              </section>
+            )
+          })}
         </div>
 
-        <BoardInspector app={selected} onChange={updateApp} onDelete={removeApp} />
+        <TaskInspector
+          task={selected}
+          ideas={ideas}
+          lang={lang}
+          t={t}
+          onChange={patchTask}
+          onDelete={removeTask}
+        />
       </div>
     </div>
+  )
+}
+
+function compact(value: string, max = 66) {
+  const text = String(value || '').trim().replace(/\s+/g, ' ')
+  return text.length > max ? `${text.slice(0, max)}…` : text
+}
+
+type Draft = {
+  title: string
+  kind: TaskKind
+  status: TaskStatus
+  deadline: string
+  ideaId: string
+  notes: string
+}
+
+function toDraft(task: BoardTask): Draft {
+  return {
+    title: task.title ?? '',
+    kind: task.kind,
+    status: task.status,
+    deadline: task.deadline ?? '',
+    ideaId: task.ideaId ?? '',
+    notes: task.notes ?? '',
+  }
+}
+
+function TaskInspector({
+  task,
+  ideas,
+  lang,
+  t,
+  onChange,
+  onDelete,
+}: {
+  task: BoardTask | null
+  ideas: Idea[]
+  lang: 'zh' | 'en'
+  t: Translate
+  onChange: (id: string, patch: Partial<BoardTask>) => void
+  onDelete: (id: string) => void
+}) {
+  const [draft, setDraft] = useState<Draft | null>(task ? toDraft(task) : null)
+
+  useEffect(() => {
+    setDraft(task ? toDraft(task) : null)
+  }, [task?.id, task?.updatedAt])
+
+  if (!task || !draft) {
+    return (
+      <aside className="board-inspector">
+        <h2 className="board-inspector-title">{t('inspector')}</h2>
+        <p className="board-inspector-empty">{t('boardPick')}</p>
+      </aside>
+    )
+  }
+
+  const set = <K extends keyof Draft>(key: K, value: Draft[K]) => setDraft((prev) => (prev ? { ...prev, [key]: value } : prev))
+
+  const save = () =>
+    onChange(task.id, {
+      title: draft.title.trim(),
+      kind: draft.kind,
+      status: draft.status,
+      deadline: draft.deadline,
+      ideaId: draft.ideaId || null,
+      notes: draft.notes,
+    })
+
+  return (
+    <aside className="board-inspector">
+      <h2 className="board-inspector-title">{t('inspector')}</h2>
+
+      <label className="board-field">
+        <span>{t('fieldName')}</span>
+        <input value={draft.title} onChange={(e) => set('title', e.target.value)} />
+      </label>
+
+      <label className="board-field">
+        <span>{t('actKind')}</span>
+        <select value={draft.kind} onChange={(e) => set('kind', e.target.value as TaskKind)}>
+          {TASK_KINDS.map((k) => (
+            <option key={k.key} value={k.key}>
+              {k.icon} {lang === 'en' ? k.en : k.zh}
+            </option>
+          ))}
+        </select>
+      </label>
+
+      <label className="board-field">
+        <span>{t('fieldStatus')}</span>
+        <select value={draft.status} onChange={(e) => set('status', e.target.value as TaskStatus)}>
+          {TASK_STATUSES.map((s) => (
+            <option key={s.key} value={s.key}>
+              {lang === 'en' ? s.en : s.zh}
+            </option>
+          ))}
+        </select>
+      </label>
+
+      <label className="board-field">
+        <span>{t('actIdea')}</span>
+        <select value={draft.ideaId} onChange={(e) => set('ideaId', e.target.value)}>
+          <option value="">{t('actNone')}</option>
+          {ideas.map((i) => (
+            <option key={i.id} value={i.id}>
+              {compact(i.text, 44)}
+            </option>
+          ))}
+        </select>
+      </label>
+
+      <label className="board-field">
+        <span>{t('fieldDeadline')}</span>
+        <input type="date" value={draft.deadline} onChange={(e) => set('deadline', e.target.value)} />
+      </label>
+
+      <label className="board-field">
+        <span>{t('fieldNotes')}</span>
+        <textarea rows={4} value={draft.notes} onChange={(e) => set('notes', e.target.value)} />
+      </label>
+
+      <div className="board-inspector-actions">
+        <button type="button" className="btn primary" onClick={save}>
+          {t('save')}
+        </button>
+        <button type="button" className="btn" onClick={() => onDelete(task.id)}>
+          {t('delete')}
+        </button>
+      </div>
+    </aside>
   )
 }

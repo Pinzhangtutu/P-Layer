@@ -4,8 +4,8 @@ import { useNav } from '../nav'
 import { askAssistant } from '../lib/api'
 import {
   STAGES,
+  completeTraining,
   createSession,
-  finishSession,
   readSessions,
   researchQuestionOf,
   writeSessions,
@@ -178,7 +178,9 @@ export function Brainstorm({
       const target = list.find((s) => s.id === id)
       if (!target) return
       if (isLast) {
-        finishSession(project, target, lang === 'en' ? 'Research project' : '研究项目')
+        // 旧版在这里创建「学术申请」卡片；该看板已下线（§5.4），
+        // 现在只完成会话并写 rqDraft，不再写入 applications。
+        completeTraining(project, target)
       } else {
         target.current = Math.min(STAGES.length - 1, target.current + 1)
         target.updatedAt = new Date().toISOString()
@@ -186,7 +188,7 @@ export function Brainstorm({
       writeSessions(project, list)
     })
     // setState 不能写在 mutate 的 updater 里：那个函数 React 会重复执行
-    if (isLast) setStatus(t('promotedToBoard'))
+    if (isLast) setStatus(t('trainingDoneHint'))
   }
 
   const handleAskPia = async () => {

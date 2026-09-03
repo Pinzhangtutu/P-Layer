@@ -6601,3 +6601,128 @@ button.app-footer-item:active {
     grid-template-columns: 1fr;
   }
 }
+
+/* ---------- 看板 · 我的研究行动（Board §5.4） ----------
+   行动看板覆盖旧「学术申请看板」的布局常量：
+   - 旧 .board-layout 是「侧栏 + 看板 + 检查器」三栏，行动版没有侧栏；
+   - 旧 .board-kanban 是 5 列，行动版只有 待办/进行中/已完成 三列。
+   放文件尾部以保证覆盖旧规则。 */
+
+.board-layout.is-actions {
+  max-width: 1180px;
+  margin: 0 auto;
+  grid-template-columns: minmax(0, 1fr) 340px;
+}
+
+.board-kanban.is-actions {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  min-width: 0;
+}
+
+.board-column.act-col {
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.board-kanban.is-actions .board-column-body {
+  gap: 10px;
+  min-height: 130px;
+  max-height: calc(100vh - 340px);
+  overflow-y: auto;
+}
+
+.board-column.act-col.is-over {
+  background: #eef3ff;
+  border-color: #9dbcf5;
+}
+
+.act-col-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  flex: 0 0 auto;
+  display: inline-block;
+}
+
+.board-column-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.board-tag.act-idea-chip {
+  display: inline-block;
+  max-width: 100%;
+  padding: 2px 8px;
+  background: var(--soft);
+  color: var(--blue);
+  font-size: 10.5px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.board-day.act-date {
+  margin-left: auto;
+}
+
+/* 检查器随页面滚动而吸附（右侧详情） */
+.board-layout.is-actions .board-inspector {
+  position: sticky;
+  top: 20px;
+  max-height: calc(100vh - 56px);
+  overflow-y: auto;
+}
+
+.board-inspector-title {
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--ink);
+}
+
+/* 研究网络节点上的行动/项目小徽章（§5.4：行动只做上下文标注） */
+.rn-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 1px 8px;
+  margin-left: 6px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: #f5f5f4;
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.rn-chip.is-proj {
+  background: rgba(24, 150, 100, 0.08);
+  border-color: rgba(24, 150, 100, 0.3);
+  color: var(--green);
+}
+
+@media (max-width: 1100px) {
+  .board-layout.is-actions {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .board-layout.is-actions .board-inspector {
+    position: static;
+    max-height: none;
+  }
+
+  .board-kanban.is-actions {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 760px) {
+  .board-kanban.is-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .board-kanban.is-actions .board-column-body {
+    max-height: none;
+  }
+}

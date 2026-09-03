@@ -2,6 +2,7 @@ import { useMemo } from 'react'
 import { useI18n } from '../i18n'
 import { normBrainstorm, rqOf } from '../lib/brainstormV1'
 import { maturityOf, readIdeas } from '../lib/ideas'
+import { boardTaskCounts } from '../lib/actions'
 import { readAudits, readLiteratureRadar, readZoteroState } from '../lib/literature'
 import { useProject } from '../lib/useProject'
 import { MaturityBadge } from './brainstorm/MaturityBadge'
@@ -30,6 +31,9 @@ export function ResearchNetwork() {
   const { lang } = useI18n()
   const { active, projects } = useProject()
   const ideas = useMemo(() => readIdeas(active), [active, projects])
+
+  /** Idea id → 看板关联行动数（§5.4 行动只挂上下文，不进网络中心） */
+  const taskCounts = useMemo(() => boardTaskCounts(active), [active, projects])
 
   const literature = useMemo(() => {
     const rows = new Map<string, { id: string; title: string; source: string; ideaIds: Set<string> }>()
@@ -93,14 +97,22 @@ export function ResearchNetwork() {
             {ideas.map((idea) => {
               const brainstorm = normBrainstorm(idea.brainstorm)
               const rq = rqOf(brainstorm)
-              const application = (active.applications || []).find((item) => item.ideaId === idea.id)
+              const actN = taskCounts.get(idea.id) || 0
+              const promoted = idea.status === 'promoted'
               return (
                 <article key={idea.id} className="research-network-node idea-node">
                   <span>{idea.id}</span>
                   <b>{compact(idea.text)}</b>
                   {rq ? <p>RQ · {compact(rq, 80)}</p> : <p>{lang === 'en' ? 'No RQ yet' : '尚未形成 RQ'}</p>}
                   <small>
-                    {application ? `${lang === 'en' ? 'Project' : '项目'} · ${application.name}` : null}
+                    {promoted ? (
+                      <span className="rn-chip is-proj">{lang === 'en' ? '✓ In project' : '✓ 已转项目'}</span>
+                    ) : null}
+                    {actN ? (
+                      <span className="rn-chip">
+                        🛠 {actN} {lang === 'en' ? (actN > 1 ? 'actions' : 'action') : '个行动'}
+                      </span>
+                    ) : null}
                     <MaturityBadge view={maturityOf(idea)} />
                   </small>
                 </article>
