@@ -111,6 +111,12 @@ export default function App() {
     navFocusTimer.current = window.setTimeout(() => setNavFocus(null), NAV_FOCUS_MS)
   }
 
+  /** 主页「继续最近 Idea / 反馈 / PDF」→ 打开头脑风暴并自动定位到对应 Idea */
+  const openHomeIdea = (ideaId: string) => {
+    setV1Target({ ideaId })
+    setRoute('brainstorm')
+  }
+
   return (
     <ProjectProvider value={store}>
       <NavProvider value={nav}>
@@ -144,7 +150,7 @@ export default function App() {
               <button type="button" className="btn small" onClick={() => setRoute('explore')}>← {t('v1BackToScience')}</button>
             </div>
           ) : null}
-          {route === 'home' ? <Home /> : null}
+          {route === 'home' ? <Home onOpenIdea={openHomeIdea} /> : null}
           {route === 'explore' || route === 'inspire' ? <ResearchExplore initialTab={exploreTab} initialNode={exploreNode} initialTrack={exploreTrack} /> : null}
           {route === 'projects' || route === 'projects-network' ? <Projects initialView={route === 'projects-network' ? 'network' : 'planning'} /> : null}
           {route === 'board' ? <Board /> : null}
@@ -163,7 +169,7 @@ export default function App() {
 
         <GlobalFooter />
       </div>
-      <ScrollHint force={route === 'home'} />
+      <ScrollHint force={false} />
       </NavProvider>
     </ProjectProvider>
   )

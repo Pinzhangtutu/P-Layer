@@ -43,7 +43,7 @@ function refreshHomeWithNewQuote() {
   window.location.reload()
 }
 
-export function Home() {
+export function Home({ onOpenIdea }: { onOpenIdea?: (ideaId: string) => void }) {
   const { lang } = useI18n()
   const { navigate } = useNav()
   const [mounted, setMounted] = useState(false)
@@ -103,16 +103,11 @@ export function Home() {
         </div>
       </section>
 
-      <section className="home-quick card">
-        <button type="button" className="home-quick-btn" onClick={() => navigate('inspire')}>
-          💡 {lang === 'en' ? 'Inspire' : '灵感开发'} <small>{lang === 'en' ? 'Start from data, pattern, question or concept' : '从数据、规律、问题或概念出发'}</small>
-        </button>
-        <button type="button" className="home-quick-btn" onClick={() => navigate('projects')}>
-          📁 {lang === 'en' ? 'Research Projects' : '科研项目管理'}
-        </button>
-      </section>
-
-      <HomeDashboard />
+      {/* 三主入口 + 真实最近工作（v1.0 §5.1）：捕捉 Idea / 管理研究资产 / 继续项目 */}
+      <HomeDashboard
+        onGo={(route) => navigate(route)}
+        onOpenIdea={(ideaId) => (onOpenIdea ? onOpenIdea(ideaId) : navigate('inspire'))}
+      />
     </div>
   )
 }
