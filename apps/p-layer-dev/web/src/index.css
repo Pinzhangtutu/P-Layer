@@ -7414,3 +7414,88 @@ button.app-footer-item:active {
   font-size: 10.5px;
   letter-spacing: .04em;
 }
+
+/* ---- 研究项目收敛（§5.3/§12：九步正式研究 + RQ 导入）---- */
+.pm-study-import {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 14px;
+  padding: 14px 16px;
+  border: 1px dashed var(--line);
+  border-radius: 12px;
+  background: rgba(247, 248, 246, 0.6);
+}
+
+.pm-study-import-rq {
+  flex: 1 1 320px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.pm-study-import-rq b {
+  color: var(--ink);
+  font-size: 13px;
+}
+
+.pm-study-import-rq p {
+  margin: 0;
+  color: var(--ink);
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+.pm-study-import-rq small {
+  color: var(--muted);
+  font-size: 11.5px;
+}
+
+.pm-study-status-select {
+  width: 100%;
+  margin: 2px 0;
+}
+
+.pm-study-started {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.pm-study-step-hint {
+  color: var(--muted);
+  font-size: 11.5px;
+  margin-bottom: 8px;
+}
+
+.pm-study-stages li {
+  list-style: none;
+}
+
+button.pm-study-stage {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.7);
+  cursor: pointer;
+  font: inherit;
+  color: var(--ink);
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+button.pm-study-stage:hover {
+  border-color: var(--blue);
+}
+
+button.pm-study-stage.is-done {
+  background: #e7f4ee;
+  border-color: rgba(24, 150, 100, 0.35);
+  color: #1a7a4e;
+}
+
+.pm-study-actions {
+  justify-content: flex-end;
+  margin-top: 8px;
+}
