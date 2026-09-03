@@ -12,6 +12,7 @@ import { NavProvider } from './nav'
 import { ProjectProvider, useCreateProjectStore } from './lib/useProject'
 import { GlobalFooter } from './components/GlobalFooter'
 import { ScrollHint } from './components/ScrollHint'
+import { PiaFloating } from './components/PiaFloating'
 import type { NodeKey } from './components/ScienceCycle'
 
 /** 主导航七入口（用户 09-03 决策，覆盖文档 v1.0 §5 的五入口）：
@@ -181,6 +182,7 @@ export default function App() {
         <GlobalFooter />
       </div>
       <ScrollHint force={false} />
+      <PiaFloating />
       </NavProvider>
     </ProjectProvider>
   )
