@@ -1,15 +1,38 @@
 /**
- * P-Layer 个人版 v1 · RQ 简报 PDF 导出（统一接口）。
+ * P-Layer 个人版 v1 · 阶段性成果 PDF 导出（统一接口）。
  * v1 用前端 jspdf + html2canvas 本地生成；未来如需替换后端 ReportLab，
  * 只需重写 generateBriefPdf，调用方不变。
- * 只包含用户成果：9 步 + RQ + 作者/日期/版本号，不含 Pia! 建议/成熟度/错误记录。
+ * 内容纪律（文档 §10）：只包含用户成果：9 步 + RQ + 作者/日期/版本号/PDF 类型，
+ * 不含 Pia! 对话、AI 建议、成熟度判断、私密错误记录或任何 AI 生成痕迹。
  */
 import { jsPDF } from 'jspdf'
 import html2canvas from 'html2canvas'
-import { STAGES, normBrainstorm, rqOf, type BrainstormData, type Version } from './brainstormV1'
+import { STAGES, ideaNum, normBrainstorm, rqOf, type BrainstormData, type Version } from './brainstormV1'
 import type { Lang } from '../i18n'
 
-export type PdfOpts = { name?: string; lang?: Lang }
+/** 文档 §10 阶段性 PDF 五类（顺序 = 文档原文） */
+export const PDF_TYPES: { key: string; zh: string; en: string }[] = [
+  { key: 'idea-brief', zh: 'Idea 简报', en: 'Idea Brief' },
+  { key: 'theory-proposal', zh: '理论研究构想', en: 'Theory Research Proposal' },
+  { key: 'empirical-proposal', zh: '实证研究构想', en: 'Empirical Research Proposal' },
+  { key: 'comprehensive-proposal', zh: '综合研究构想', en: 'Comprehensive Research Proposal' },
+  { key: 'rq-brief', zh: 'RQ 成果简报', en: 'RQ Output Brief' },
+]
+
+export type PdfTypeKey = (typeof PDF_TYPES)[number]['key']
+
+export function pdfTypeLabel(key: string, lang: 'zh' | 'en'): string {
+  const found = PDF_TYPES.find((p) => p.key === key)
+  if (found) return lang === 'en' ? found.en : found.zh
+  return lang === 'en' ? 'RQ Output Brief' : 'RQ 成果简报'
+}
+
+/** 上下文默认：已有 RQ 才够得上 RQ 成果简报，否则退回 Idea 简报 */
+export function defaultPdfType(rqText: string): PdfTypeKey {
+  return rqText.trim() ? 'rq-brief' : 'idea-brief'
+}
+
+export type PdfOpts = { name?: string; lang?: Lang; type?: PdfTypeKey }
 
 function esc(s: string): string {
   return s
@@ -27,13 +50,15 @@ export async function generateBriefPdf(
   opts?: PdfOpts,
 ): Promise<string> {
   const b = normBrainstorm(bRaw)
+  const zh = !opts || opts.lang !== 'en'
   const v = version || b.versions[b.versions.length - 1]
   const snap = v ? v.steps || {} : b.steps
   const rq = v ? v.rq || '' : rqOf(b)
-  const label = v ? `Idea-${String(ideaId).slice(-4)} / V${v.v || 1}` : `Idea-${String(ideaId).slice(-4)} / Draft`
+  const type = opts?.type || defaultPdfType(rq)
+  const label = v ? `${ideaNum(ideaId)} / V${v.v || 1}` : `${ideaNum(ideaId)} / Draft`
+  const typeName = pdfTypeLabel(type, zh ? 'zh' : 'en')
   const name = (opts && opts.name) || b.name || ''
   const date = new Date().toISOString().slice(0, 10)
-  const zh = !opts || opts.lang !== 'en'
 
   const row = (key: (typeof STAGES)[number]['key'], no: string, title: string) => {
     const raw = snap[key]
@@ -46,11 +71,11 @@ export async function generateBriefPdf(
 
   const pdfHtml = `<div class="pdf-page" style="font-family:-apple-system,BlinkMacSystemFont,'PingFang SC','Microsoft YaHei',sans-serif;color:#1d1d1f;background:#fff;padding:36px;width:700px;box-sizing:border-box;">
     <header style="display:flex;justify-content:space-between;border-bottom:1px solid #d2d2d7;padding-bottom:10px;margin-bottom:18px;">
-      <b style="font-size:15px;">P-Layer · ${esc(label)}</b>
+      <b style="font-size:15px;">P-Layer · ${esc(label)} · ${esc(typeName)}</b>
       <span style="color:#6e6e73;font-size:13px;">${esc(date)}</span>
     </header>
     ${name ? `<div style="font-size:13px;color:#6e6e73;margin-bottom:10px;">${zh ? '作者' : 'Author'}：${esc(name)}</div>` : ''}
-    <div style="font-size:22px;font-weight:700;margin:6px 0 18px;">${zh ? '头脑风暴成果简报' : 'Brainstorm Brief'}</div>
+    <div style="font-size:22px;font-weight:700;margin:6px 0 18px;">${esc(typeName)}</div>
     <div style="font-size:13px;color:#6e6e73;margin-bottom:12px;">${zh ? 'Idea' : 'Idea'}：${esc(ideaText)}</div>
     ${rows}
     <div class="pdf-rq" style="margin-top:16px;padding:12px 14px;background:#f5f5f7;border-radius:12px;">
@@ -83,7 +108,7 @@ export async function generateBriefPdf(
       y += pageH * (canvas.width / w)
       first = false
     }
-    const fileName = `P-Layer-${label.replace(/[^A-Za-z0-9-]+/g, '-')}.pdf`
+    const fileName = `P-Layer-${label.replace(/[^A-Za-z0-9-]+/g, '-')}-${type}.pdf`
     pdf.save(fileName)
     return fileName
   } finally {

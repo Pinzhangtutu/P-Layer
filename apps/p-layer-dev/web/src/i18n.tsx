@@ -505,6 +505,7 @@ const dict = {
   v1PdfFailed: { zh: 'PDF 生成失败：', en: 'PDF failed: ' },
   v1PdfGenerated: { zh: 'PDF 已生成：', en: 'PDF generated: ' },
   v1PdfHistory: { zh: '已生成的简报', en: 'Generated briefs' },
+  v1PdfPickType: { zh: '选择 PDF 类型（阶段性成果，只含你确认的内容）', en: 'Choose PDF type (stage output, your content only)' },
   v1PiaBusy: { zh: 'Pia! 思考中…', en: 'Pia! is thinking…' },
   v1PiaError: { zh: 'Pia! 暂时不可用：', en: 'Pia! unavailable: ' },
   v1PickAnother: { zh: '换一个', en: 'Pick another' },

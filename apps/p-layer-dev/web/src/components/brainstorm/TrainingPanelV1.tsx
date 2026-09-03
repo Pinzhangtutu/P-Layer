@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useI18n } from '../../i18n'
 import { useProject } from '../../lib/useProject'
 import { askAssistant } from '../../lib/api'
-import { generateBriefPdf } from '../../lib/briefPdf'
+import { generateBriefPdf, PDF_TYPES, pdfTypeLabel, defaultPdfType, type PdfTypeKey } from '../../lib/briefPdf'
 import { readIdeas, maturityOf } from '../../lib/ideas'
 import { MaturityBadge } from './MaturityBadge'
 import {
@@ -17,6 +17,7 @@ import {
   restoreVersion,
   stageValue,
   ideaLabel,
+  versionToken,
   type StageKey,
   type BrainstormData,
 } from '../../lib/brainstormV1'
@@ -54,6 +55,7 @@ export function TrainingPanelV1({
     return init || b.currentStep || 'idea'
   })
   const [modal, setModal] = useState<ModalState>(null)
+  const [pdfPick, setPdfPick] = useState(false)
   const [toast, setToast] = useState('')
   const [piaBusy, setPiaBusy] = useState(false)
   const [piaAnswer, setPiaAnswer] = useState('')
@@ -113,10 +115,11 @@ export function TrainingPanelV1({
   const filledCount = STAGES.filter((s) => s.key !== 'recheck' && stageValue(b, s.key).trim()).length
 
   /* ---------- PDF ---------- */
-  async function doPdf(version?: { v: number; label: string; savedAt: string; steps: Record<string, string>; rq: string }) {
+  async function doPdf(version?: { v: number; label: string; savedAt: string; steps: Record<string, string>; rq: string }, type?: PdfTypeKey) {
     try {
-      const fileName = await generateBriefPdf(idea.text, idea.id, b, version as never, { name: b.name, lang })
-      withBrainstorm((bb) => addPdf(bb, version ? version.v : (bb.versions[bb.versions.length - 1]?.v || 0), fileName))
+      const typeKey = type || defaultPdfType(version ? version.rq : rqText)
+      const fileName = await generateBriefPdf(idea.text, idea.id, b, version as never, { name: b.name, lang, type: typeKey })
+      withBrainstorm((bb) => addPdf(bb, version ? version.v : (bb.versions[bb.versions.length - 1]?.v || 0), fileName, typeKey))
       showToast(t('v1PdfGenerated') + ': ' + fileName)
     } catch (err) {
       showToast(t('v1PdfFailed') + ': ' + (err instanceof Error ? err.message : String(err)))
@@ -227,18 +230,35 @@ export function TrainingPanelV1({
         <h3>{t('v1ExitTitle')}</h3>
         <p className="loop-exit-sub">{t('v1ExitSub')}</p>
         <div className="loop-exit-grid">
-          <button type="button" className="loop-exit-card" onClick={() => doPdf()}>📄 {t('v1ExitPdf')}</button>
+          <button type="button" className={`loop-exit-card${pdfPick ? ' is-active' : ''}`} onClick={() => setPdfPick((p) => !p)}>📄 {t('v1ExitPdf')}</button>
           <button type="button" className="loop-exit-card" onClick={() => { onClose(); onNavigate('literature') }}>📚 {t('v1ExitLit')}</button>
           <button type="button" className="loop-exit-card" onClick={openFeedback}>💬 {t('v1ExitFb')}</button>
           <button type="button" className="loop-exit-card" onClick={() => goto('recheck')}>🔍 {t('v1ExitRecheck')}</button>
           <button type="button" className="loop-exit-card" onClick={promote}>🚀 {t('v1ExitPromote')}</button>
           <button type="button" className="loop-exit-card" onClick={pauseIdea}>⏸ {t('v1ExitPause')}</button>
         </div>
+        {pdfPick ? (
+          <div className="loop-pdf-pick">
+            <b>{t('v1PdfPickType')}</b>
+            <div className="loop-pdf-pick-chips">
+              {PDF_TYPES.map((p) => (
+                <button
+                  key={p.key}
+                  type="button"
+                  className="loop-pdf-pick-chip"
+                  onClick={() => { setPdfPick(false); doPdf(undefined, p.key as PdfTypeKey) }}
+                >
+                  {lang === 'en' ? p.en : p.zh}
+                </button>
+              ))}
+            </div>
+          </div>
+        ) : null}
         {b.pdfs.length ? (
           <div className="loop-pdf-history">
             <b>{t('v1PdfHistory')}</b>
             {b.pdfs.slice().reverse().map((p, i) => (
-              <span key={i}>V{p.version} · {p.fileName} · {t('v1On')} {(p.createdAt || '').slice(0, 10)}</span>
+              <span key={i}>V{p.version} · {p.fileName} · {pdfTypeLabel(p.type || 'rq-brief', lang)} · {t('v1On')} {(p.createdAt || '').slice(0, 10)}</span>
             ))}
           </div>
         ) : null}
@@ -324,7 +344,7 @@ export function TrainingPanelV1({
         <div className="loop-meta-line">{t('v1Filled')}: {filledCount}/9</div>
       </div>
       {toast ? <div className="loop-toast">{toast}</div> : null}
-      {modal?.kind === 'version' ? <VersionModal b={b} v={modal.v} t={t} lang={lang} onClose={() => setModal(null)} /> : null}
+      {modal?.kind === 'version' ? <VersionModal b={b} v={modal.v} ideaId={idea.id} t={t} lang={lang} onClose={() => setModal(null)} /> : null}
       {modal?.kind === 'compare' ? <CompareModal b={b} t={t} lang={lang} onClose={() => setModal(null)} /> : null}
       {modal?.kind === 'feedback' ? <FeedbackModal b={b} t={t} lang={lang} onSave={saveFeedback} onClose={() => setModal(null)} /> : null}
     </div>
@@ -402,13 +422,13 @@ function RecheckView({
 }
 
 /* ================= 版本查看 modal ================= */
-function VersionModal({ b, v, t, lang, onClose }: { b: BrainstormData; v: number; t: Translate; lang: string; onClose: () => void }) {
+function VersionModal({ b, v, ideaId, t, lang, onClose }: { b: BrainstormData; v: number; ideaId: string; t: Translate; lang: string; onClose: () => void }) {
   const snap = b.versions.find((x) => x.v === v)
   if (!snap) return null
   return (
     <div className="loop-modal">
       <div className="loop-modal-card">
-        <header><b>{t('v1ViewVersion')} · Idea / V{v}</b><button type="button" className="loop-modal-x" onClick={onClose}>×</button></header>
+        <header><b>{versionToken(ideaId, v)} · {t('v1ViewVersion')}</b><button type="button" className="loop-modal-x" onClick={onClose}>×</button></header>
         <div className="loop-modal-body">
           <div className="loop-diff">
             <div className="loop-diff-rq"><b>09 {lang === 'en' ? 'Initial RQ' : '初步 RQ'}</b><p>{snap.rq || (lang === 'en' ? '（empty）' : '（空）')}</p></div>

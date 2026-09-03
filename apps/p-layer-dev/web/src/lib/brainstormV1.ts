@@ -67,6 +67,8 @@ export type Feedback = {
 export type PdfMeta = {
   version: number
   fileName: string
+  /** PDF 类型 key（文档 §10 五类），旧记录缺省按 'rq-brief' 读取 */
+  type?: string
   createdAt: string
 }
 
@@ -157,14 +159,40 @@ export type BrainstormData = {
   }
 }
 
+/** 反馈类型：文档 §11 规范六类（顺序 = 文档原文） */
 export const FEEDBACK_TYPES: [string, Bilingual][] = [
+  ['clarity', { zh: '表达不清', en: 'Unclear expression' }],
   ['logic', { zh: '逻辑问题', en: 'Logic' }],
-  ['premise', { zh: '前提假设', en: 'Premises' }],
-  ['literature', { zh: '文献依据', en: 'Literature support' }],
-  ['evidence', { zh: '证据方向', en: 'Evidence direction' }],
-  ['clarity', { zh: '表述清晰度', en: 'Clarity' }],
+  ['theory', { zh: '理论建议', en: 'Theory suggestion' }],
+  ['literature', { zh: '文献建议', en: 'Literature suggestion' }],
+  ['value', { zh: '研究价值', en: 'Research value' }],
   ['other', { zh: '其他', en: 'Other' }],
 ]
+
+/** 旧版反馈类型 key → 文档 §11 规范 key（仅读取/展示时归一；存储原始记录不动） */
+const FB_LEGACY_MAP: Record<string, string> = {
+  premise: 'theory',
+  evidence: 'value',
+}
+
+/** 把任意来源的 type key 归一为规范 key（未知 key 丢弃） */
+export function canonicalFeedbackTypes(types: string[]): string[] {
+  const seen: string[] = []
+  ;(types || []).forEach((k) => {
+    const c = FB_LEGACY_MAP[k] || k
+    if (FEEDBACK_TYPES.some(([key]) => key === c) && !seen.includes(c)) seen.push(c)
+  })
+  return seen
+}
+
+/** 反馈类型显示名（旧 key 自动归一；未知回退 '其他'） */
+export function fbTypeLabel(key: string, lang: 'zh' | 'en'): string {
+  const c = FB_LEGACY_MAP[key] || key
+  const found = FEEDBACK_TYPES.find(([k]) => k === c)
+  if (found) return lang === 'en' ? found[1].en : found[1].zh
+  const other = FEEDBACK_TYPES.find(([k]) => k === 'other')!
+  return lang === 'en' ? other[1].en : other[1].zh
+}
 
 export const RECHECK_ITEMS: [string, Bilingual, Bilingual][] = [
   ['logic', { zh: '逻辑', en: 'Logic' }, { zh: '命题与预测之间逻辑一致，不把相关当因果。', en: 'Proposition and prediction are logically consistent; correlation is not treated as causation.' }],
@@ -241,15 +269,24 @@ export function addFeedback(b: BrainstormData, types: string[], text: string, pd
   b.feedbacks.push({
     id: 'fb' + Date.now().toString(36),
     pdfVersion: pdfVersion ?? null,
-    types: types.slice(),
+    types: canonicalFeedbackTypes(types),
     text: text.trim(),
     createdAt: new Date().toISOString(),
   })
 }
 
-export function addPdf(b: BrainstormData, version: number, fileName: string): void {
+/** 文档 §10 分层编号的 Idea 层 token（RQ 层待多 RQ 数据形态落地后追加） */
+export function ideaNum(id: string): string {
+  return `Idea-${String(id).slice(-4)}`
+}
+
+export function versionToken(id: string, v: number): string {
+  return `${ideaNum(id)} / V${v}`
+}
+
+export function addPdf(b: BrainstormData, version: number, fileName: string, type?: string): void {
   b.pdfs = b.pdfs || []
-  b.pdfs.push({ version, fileName, createdAt: new Date().toISOString() })
+  b.pdfs.push({ version, fileName, type: type || 'rq-brief', createdAt: new Date().toISOString() })
 }
 
 export function restoreVersion(b: BrainstormData, v: number): void {
