@@ -7380,3 +7380,11 @@ button.app-footer-item:active {
   background: #fff;
   margin-bottom: 12px;
 }
+
+/* 田字格 4 宫标签 */
+.wallace-overview-svg .wn-quad-label {
+  fill: #8a959d;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .06em;
+}
