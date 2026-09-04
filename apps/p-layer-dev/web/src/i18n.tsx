@@ -358,8 +358,8 @@ const dict = {
   nextStep: { zh: '下一步', en: 'Next' },
   saved: { zh: '已保存', en: 'Saved' },
   // ---- 项目管理（Projects）----
-  projects: { zh: '研究项目', en: 'Research Projects' },
-  projectsSub: { zh: '只管理用户主动成立的正式研究项目（§5.3/§12），旧 Gantt 规划已下线', en: 'Formal research projects only — imported from an RQ you chose to start' },
+  projects: { zh: '项目管理', en: 'Project Management' },
+  projectsSub: { zh: '只管理用户主动成立的正式研究项目 · 九步执行结构（§5.3/§12），旧 Gantt 规划已下线', en: 'Formal research projects only — imported from an RQ you chose to start' },
   pmCardNote: { zh: '每个步骤归属一个 Milestone，并有起止日期和完成度', en: 'Each step belongs to a milestone, with start, end, and progress' },
   projectName: { zh: '项目名称', en: 'Project name' },
   participants: { zh: '参与者人数', en: 'Participants' },

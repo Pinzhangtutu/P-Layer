@@ -26,7 +26,7 @@ const NAV = [
   { id: 'brainstorm', zh: '🧠 头脑风暴', en: '🧠 Brainstorm' },
   { id: 'inspire', zh: '🔄 科学环', en: '🔄 Science Cycle' },
   { id: 'literature', zh: '📚 研究库', en: '📚 Research Library' },
-  { id: 'projects', zh: '📁 研究项目', en: '📁 Research Projects' },
+  { id: 'projects', zh: '📁 项目管理', en: '📁 Project Management' },
   { id: 'board', zh: '📊 看板', en: '📊 Board' },
   { id: 'settings', zh: '⚙️ 设置', en: '⚙️ Settings' },
 ] as const
