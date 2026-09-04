@@ -151,8 +151,7 @@ export default function App() {
                 }
               }}
             >
-              <span className="workspace-nav-zh">{lang === 'en' ? item.en : item.zh}</span>
-              <span className="workspace-nav-en">{lang === 'en' ? item.zh.replace(/^[^\u4e00-\u9fa5A-Za-z]*/, '').trim() : item.en}</span>
+              {lang === 'en' ? item.en : item.zh}
             </button>
           ))}
         </nav>

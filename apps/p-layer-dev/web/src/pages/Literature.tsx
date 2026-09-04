@@ -26,6 +26,7 @@ import { setBrainstormDraft } from '../lib/handoff'
 import { useProject } from '../lib/useProject'
 import { PageIntro } from '../components/PageIntro'
 import { AuditForm, AuditList } from '../components/literature/AuditPanel'
+import { JournalLibrary } from '../components/literature/JournalLibrary'
 
 export function Literature() {
   const { t, lang } = useI18n()
@@ -195,6 +196,8 @@ export function Literature() {
           {lang === 'en' ? 'View in research network' : '在研究网络中查看'} →
         </button>
       </div>
+
+      <JournalLibrary />
 
       <section className="card lit-card radar-card">
         <div className="head">
