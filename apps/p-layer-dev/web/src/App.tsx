@@ -22,13 +22,13 @@ import type { NodeKey } from './components/ScienceCycle'
  *  研究库管理已有 Idea/理论/文献。brainstorm/literature 仍可从科学环、
  *  主页与文献内部进入。 */
 const NAV = [
-  { id: 'home', zh: '🏠 主页', en: '🏠 Home' },
-  { id: 'brainstorm', zh: '🧠 头脑风暴', en: '🧠 Brainstorm' },
-  { id: 'inspire', zh: '🔄 科学环', en: '🔄 Science Cycle' },
-  { id: 'literature', zh: '📚 研究库', en: '📚 Research Library' },
-  { id: 'projects', zh: '📁 项目管理', en: '📁 Project Management' },
-  { id: 'board', zh: '📊 看板', en: '📊 Board' },
-  { id: 'settings', zh: '⚙️ 设置', en: '⚙️ Settings' },
+  { id: 'home', zh: '🏠 主页', en: 'Home' },
+  { id: 'brainstorm', zh: '🧠 头脑风暴', en: 'Brainstorm' },
+  { id: 'inspire', zh: '🔄 科学环', en: 'Science Cycle' },
+  { id: 'literature', zh: '📚 研究库', en: 'Research Library' },
+  { id: 'projects', zh: '📁 项目管理', en: 'Project Management' },
+  { id: 'board', zh: '📊 看板', en: 'Board' },
+  { id: 'settings', zh: '⚙️ 设置', en: 'Settings' },
 ] as const
 
 /** 已迁到 React 的页面（science 为 v1 新增；brainstorm/flow/literature 从科学环进入） */
@@ -151,7 +151,8 @@ export default function App() {
                 }
               }}
             >
-              {lang === 'en' ? item.en : item.zh}
+              <span className="workspace-nav-zh">{lang === 'en' ? item.en : item.zh}</span>
+              <span className="workspace-nav-en">{lang === 'en' ? item.zh.replace(/^[^\u4e00-\u9fa5A-Za-z]*/, '').trim() : item.en}</span>
             </button>
           ))}
         </nav>

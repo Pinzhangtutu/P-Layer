@@ -7847,3 +7847,31 @@ button.science-enter-idea:hover {
   .pia-float { right: 14px; bottom: 14px; }
   .pia-float-panel { right: 10px; bottom: 10px; width: calc(100vw - 20px); height: calc(100vh - 120px); }
 }
+
+/* 导航双语：主语言行 + 对应翻译小字行（zh: 主页+Home / en: Home+主页） */
+.workspace-nav button {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+  line-height: 1.25;
+}
+
+.workspace-nav-zh {
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.workspace-nav-en {
+  font-size: 9.5px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #9aa1a6;
+}
+
+.workspace-nav button.active .workspace-nav-en,
+.workspace-nav button:hover .workspace-nav-en {
+  color: #6c7780;
+}
