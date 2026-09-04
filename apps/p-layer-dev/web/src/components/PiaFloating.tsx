@@ -68,7 +68,7 @@ export function PiaFloating() {
         title={t('piaCoach')}
         aria-label={t('piaCoach')}
       >
-        <span className="pia-float-avatar" aria-hidden="true">🐯</span>
+        <img className="pia-float-avatar" src="/pia-mascot.png" alt="Pia!" />
         <span className="pia-float-label">Pia!</span>
       </button>
     )
@@ -77,7 +77,7 @@ export function PiaFloating() {
   return (
     <div className="pia-float-panel" role="dialog" aria-label={t('piaCoach')}>
       <header className="pia-float-head">
-        <span className="pia-float-head-avatar" aria-hidden="true">🐯</span>
+        <img className="pia-float-head-avatar" src="/pia-mascot.png" alt="Pia!" />
         <span className="pia-float-head-title">
           <b>Pia!</b>
           <small>{t('piaCoach')}</small>
